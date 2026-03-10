@@ -2,8 +2,9 @@ import Signin from "@/components/Auth/Signin";
 import React from "react";
 import { Metadata } from "next";
 export const metadata: Metadata = {
-  title: "Signin Page | NextCommerce Nextjs E-commerce template",
-  description: "This is Signin Page for NextCommerce Template",
+  title: "Tiny Libaas by Zayd - Signin",
+  description:
+    "Sign in to your Tiny Libaas by Zayd account to access your personalized shopping experience, manage your wishlist, and track your orders.",
   // other metadata
 };
 

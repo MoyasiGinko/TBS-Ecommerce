@@ -3,8 +3,9 @@ import ShopWithoutSidebar from "@/components/ShopWithoutSidebar";
 
 import { Metadata } from "next";
 export const metadata: Metadata = {
-  title: "Shop Page | NextCommerce Nextjs E-commerce template",
-  description: "This is Shop Page for NextCommerce Template",
+  title: "Tiny Libaas by Zayd - Shop Without Sidebar",
+  description:
+    "Browse our wide selection of products without any sidebar distractions. Find everything you need at competitive prices with Tiny Libaas by Zayd.",
   // other metadata
 };
 

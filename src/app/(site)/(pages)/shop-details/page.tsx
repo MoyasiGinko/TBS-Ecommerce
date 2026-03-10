@@ -3,8 +3,9 @@ import ShopDetails from "@/components/ShopDetails";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Shop Details Page | NextCommerce Nextjs E-commerce template",
-  description: "This is Shop Details Page for NextCommerce Template",
+  title: "Tiny Libaas by Zayd - Shop Details",
+  description:
+    "View detailed information about our products with Tiny Libaas by Zayd. Find everything you need at competitive prices.",
   // other metadata
 };
 
