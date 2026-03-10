@@ -3,7 +3,11 @@ import Breadcrumb from "@/components/Common/Breadcrumb";
 import Link from "next/link";
 import React, { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentProfile, signInWithEmail } from "@/lib/supabase/auth";
+import {
+  getCurrentProfile,
+  setRoleCookie,
+  signInWithEmail,
+} from "@/lib/supabase/auth";
 
 const Signin = () => {
   const router = useRouter();
@@ -26,6 +30,9 @@ const Signin = () => {
     }
 
     const profile = await getCurrentProfile();
+    if (profile?.role) {
+      setRoleCookie(profile.role);
+    }
     setIsSubmitting(false);
 
     if (profile?.role === "admin" || profile?.role === "manager") {

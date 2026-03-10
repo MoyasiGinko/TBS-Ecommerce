@@ -1,6 +1,16 @@
 import { createSupabaseBrowserClient } from "./client";
 import { UserProfile } from "@/types/user";
 
+export const setRoleCookie = (role: string) => {
+  if (typeof document === "undefined") return;
+  document.cookie = `app_role=${role}; Path=/; Max-Age=2592000; SameSite=Lax`;
+};
+
+export const clearRoleCookie = () => {
+  if (typeof document === "undefined") return;
+  document.cookie = "app_role=; Path=/; Max-Age=0; SameSite=Lax";
+};
+
 export const signUpWithEmail = async (input: {
   fullName: string;
   email: string;
@@ -59,6 +69,7 @@ export const signOutUser = async () => {
   const supabase = createSupabaseBrowserClient();
   if (!supabase) return;
   await supabase.auth.signOut();
+  clearRoleCookie();
 };
 
 export const getCurrentProfile = async (): Promise<UserProfile | null> => {

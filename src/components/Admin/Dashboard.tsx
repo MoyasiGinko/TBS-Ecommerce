@@ -55,6 +55,19 @@ type OrderRow = {
   title: string;
 };
 
+const PAGE_SIZE = 6;
+
+const paginate = <T,>(items: T[], page: number, size = PAGE_SIZE) => {
+  const totalPages = Math.max(1, Math.ceil(items.length / size));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const start = (safePage - 1) * size;
+  return {
+    pageItems: items.slice(start, start + size),
+    totalPages,
+    safePage,
+  };
+};
+
 const AdminDashboard = () => {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
@@ -104,6 +117,27 @@ const AdminDashboard = () => {
     total: "$0",
     title: "",
   });
+
+  const [search, setSearch] = useState<Record<AdminTab, string>>({
+    products: "",
+    categories: "",
+    blogs: "",
+    testimonials: "",
+    orders: "",
+    users: "",
+  });
+
+  const [page, setPage] = useState<Record<AdminTab, number>>({
+    products: 1,
+    categories: 1,
+    blogs: 1,
+    testimonials: 1,
+    orders: 1,
+    users: 1,
+  });
+
+  const [editingId, setEditingId] = useState<string>("");
+  const [editingDraft, setEditingDraft] = useState<Record<string, any>>({});
 
   const toArray = (value: string) =>
     value
@@ -201,6 +235,78 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleSearch = (tab: AdminTab, value: string) => {
+    setSearch((prev) => ({ ...prev, [tab]: value }));
+    setPage((prev) => ({ ...prev, [tab]: 1 }));
+  };
+
+  const startEdit = (id: string, row: any) => {
+    setEditingId(id);
+    setEditingDraft(row);
+  };
+
+  const cancelEdit = () => {
+    setEditingId("");
+    setEditingDraft({});
+  };
+
+  const headerCard =
+    "rounded-xl border border-gray-3 bg-gradient-to-br from-white to-gray-1 p-4";
+
+  const filteredProducts = products.filter((p) =>
+    p.title.toLowerCase().includes(search.products.toLowerCase()),
+  );
+  const filteredCategories = categories.filter((c) =>
+    c.title.toLowerCase().includes(search.categories.toLowerCase()),
+  );
+  const filteredBlogs = blogs.filter((b) =>
+    b.title.toLowerCase().includes(search.blogs.toLowerCase()),
+  );
+  const filteredTestimonials = testimonials.filter((t) =>
+    (t.author_name + t.author_role)
+      .toLowerCase()
+      .includes(search.testimonials.toLowerCase()),
+  );
+  const filteredOrders = orders.filter((o) =>
+    (o.order_id + o.title + o.status)
+      .toLowerCase()
+      .includes(search.orders.toLowerCase()),
+  );
+  const filteredUsers = users.filter((u) =>
+    (u.email + u.fullName + u.role)
+      .toLowerCase()
+      .includes(search.users.toLowerCase()),
+  );
+
+  const productsPg = paginate(filteredProducts, page.products);
+  const categoriesPg = paginate(filteredCategories, page.categories);
+  const blogsPg = paginate(filteredBlogs, page.blogs);
+  const testimonialsPg = paginate(filteredTestimonials, page.testimonials);
+  const ordersPg = paginate(filteredOrders, page.orders);
+  const usersPg = paginate(filteredUsers, page.users);
+
+  const renderPager = (tab: AdminTab, totalPages: number) => (
+    <div className="mt-4 flex items-center gap-2">
+      <button
+        className="px-3 py-1 rounded border border-gray-3 bg-white disabled:opacity-50"
+        disabled={page[tab] <= 1}
+        onClick={() => setPage((p) => ({ ...p, [tab]: p[tab] - 1 }))}
+      >
+        Prev
+      </button>
+      <p className="text-sm">
+        Page {page[tab]} / {totalPages}
+      </p>
+      <button
+        className="px-3 py-1 rounded border border-gray-3 bg-white disabled:opacity-50"
+        disabled={page[tab] >= totalPages}
+        onClick={() => setPage((p) => ({ ...p, [tab]: p[tab] + 1 }))}
+      >
+        Next
+      </button>
+    </div>
+  );
+
   if (isLoading) {
     return <p className="text-dark">Loading admin dashboard...</p>;
   }
@@ -242,6 +348,33 @@ const AdminDashboard = () => {
       {message ? (
         <p className="text-red text-custom-sm mb-4">{message}</p>
       ) : null}
+
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
+        <div className={headerCard}>
+          <p className="text-xs">Products</p>
+          <p className="font-semibold text-xl">{products.length}</p>
+        </div>
+        <div className={headerCard}>
+          <p className="text-xs">Categories</p>
+          <p className="font-semibold text-xl">{categories.length}</p>
+        </div>
+        <div className={headerCard}>
+          <p className="text-xs">Blogs</p>
+          <p className="font-semibold text-xl">{blogs.length}</p>
+        </div>
+        <div className={headerCard}>
+          <p className="text-xs">Testimonials</p>
+          <p className="font-semibold text-xl">{testimonials.length}</p>
+        </div>
+        <div className={headerCard}>
+          <p className="text-xs">Orders</p>
+          <p className="font-semibold text-xl">{orders.length}</p>
+        </div>
+        <div className={headerCard}>
+          <p className="text-xs">Users</p>
+          <p className="font-semibold text-xl">{users.length}</p>
+        </div>
+      </div>
 
       <div className="flex flex-wrap gap-2 mb-6">
         {(
@@ -361,36 +494,119 @@ const AdminDashboard = () => {
             Add product
           </button>
 
+          <input
+            className="mb-4 w-full border rounded p-2"
+            placeholder="Search products"
+            value={search.products}
+            onChange={(e) => handleSearch("products", e.target.value)}
+          />
+
           <div className="space-y-2">
-            {products.map((p) => (
+            {productsPg.pageItems.map((p) => (
               <div
                 key={p.id}
                 className="border rounded p-3 flex items-center justify-between gap-3"
               >
-                <div>
-                  <p className="font-medium">{p.title}</p>
-                  <p className="text-sm">
-                    ${p.discounted_price} / ${p.price}
-                  </p>
-                </div>
-                <button
-                  className="px-3 py-1 rounded bg-red text-white"
-                  onClick={() =>
-                    saveAction(async () => {
-                      if (!supabase) return;
-                      const { error } = await supabase
-                        .from("products")
-                        .delete()
-                        .eq("id", p.id);
-                      if (error) throw error;
-                    })
-                  }
-                >
-                  Delete
-                </button>
+                {editingId === `product-${p.id}` ? (
+                  <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-2">
+                    <input
+                      className="border rounded p-2"
+                      value={editingDraft.title || ""}
+                      onChange={(e) =>
+                        setEditingDraft((d) => ({
+                          ...d,
+                          title: e.target.value,
+                        }))
+                      }
+                    />
+                    <input
+                      className="border rounded p-2"
+                      type="number"
+                      value={editingDraft.price || 0}
+                      onChange={(e) =>
+                        setEditingDraft((d) => ({
+                          ...d,
+                          price: Number(e.target.value),
+                        }))
+                      }
+                    />
+                    <input
+                      className="border rounded p-2"
+                      type="number"
+                      value={editingDraft.discounted_price || 0}
+                      onChange={(e) =>
+                        setEditingDraft((d) => ({
+                          ...d,
+                          discounted_price: Number(e.target.value),
+                        }))
+                      }
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        className="px-3 py-1 rounded bg-blue text-white"
+                        onClick={() =>
+                          saveAction(async () => {
+                            if (!supabase) return;
+                            const { error } = await supabase
+                              .from("products")
+                              .update({
+                                title: editingDraft.title,
+                                price: editingDraft.price,
+                                discounted_price: editingDraft.discounted_price,
+                              })
+                              .eq("id", p.id);
+                            if (error) throw error;
+                            cancelEdit();
+                          })
+                        }
+                      >
+                        Save
+                      </button>
+                      <button
+                        className="px-3 py-1 rounded bg-gray-2"
+                        onClick={cancelEdit}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <p className="font-medium">{p.title}</p>
+                      <p className="text-sm">
+                        ${p.discounted_price} / ${p.price}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        className="px-3 py-1 rounded bg-blue text-white"
+                        onClick={() => startEdit(`product-${p.id}`, p)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="px-3 py-1 rounded bg-red text-white"
+                        onClick={() =>
+                          saveAction(async () => {
+                            if (!supabase) return;
+                            const { error } = await supabase
+                              .from("products")
+                              .delete()
+                              .eq("id", p.id);
+                            if (error) throw error;
+                          })
+                        }
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
+          {renderPager("products", productsPg.totalPages)}
         </div>
       )}
 
@@ -434,31 +650,96 @@ const AdminDashboard = () => {
             Add category
           </button>
 
+          <input
+            className="mb-4 w-full border rounded p-2"
+            placeholder="Search categories"
+            value={search.categories}
+            onChange={(e) => handleSearch("categories", e.target.value)}
+          />
+
           <div className="space-y-2">
-            {categories.map((c) => (
+            {categoriesPg.pageItems.map((c) => (
               <div
                 key={c.id}
                 className="border rounded p-3 flex items-center justify-between"
               >
-                <p>{c.title}</p>
-                <button
-                  className="px-3 py-1 rounded bg-red text-white"
-                  onClick={() =>
-                    saveAction(async () => {
-                      if (!supabase) return;
-                      const { error } = await supabase
-                        .from("categories")
-                        .delete()
-                        .eq("id", c.id);
-                      if (error) throw error;
-                    })
-                  }
-                >
-                  Delete
-                </button>
+                {editingId === `category-${c.id}` ? (
+                  <div className="w-full flex flex-wrap items-center gap-2">
+                    <input
+                      className="border rounded p-2"
+                      value={editingDraft.title || ""}
+                      onChange={(e) =>
+                        setEditingDraft((d) => ({
+                          ...d,
+                          title: e.target.value,
+                        }))
+                      }
+                    />
+                    <input
+                      className="border rounded p-2 flex-1"
+                      value={editingDraft.img || ""}
+                      onChange={(e) =>
+                        setEditingDraft((d) => ({ ...d, img: e.target.value }))
+                      }
+                    />
+                    <button
+                      className="px-3 py-1 rounded bg-blue text-white"
+                      onClick={() =>
+                        saveAction(async () => {
+                          if (!supabase) return;
+                          const { error } = await supabase
+                            .from("categories")
+                            .update({
+                              title: editingDraft.title,
+                              img: editingDraft.img,
+                            })
+                            .eq("id", c.id);
+                          if (error) throw error;
+                          cancelEdit();
+                        })
+                      }
+                    >
+                      Save
+                    </button>
+                    <button
+                      className="px-3 py-1 rounded bg-gray-2"
+                      onClick={cancelEdit}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <p>{c.title}</p>
+                    <div className="flex gap-2">
+                      <button
+                        className="px-3 py-1 rounded bg-blue text-white"
+                        onClick={() => startEdit(`category-${c.id}`, c)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="px-3 py-1 rounded bg-red text-white"
+                        onClick={() =>
+                          saveAction(async () => {
+                            if (!supabase) return;
+                            const { error } = await supabase
+                              .from("categories")
+                              .delete()
+                              .eq("id", c.id);
+                            if (error) throw error;
+                          })
+                        }
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
+          {renderPager("categories", categoriesPg.totalPages)}
         </div>
       )}
 
@@ -515,31 +796,110 @@ const AdminDashboard = () => {
             Add blog
           </button>
 
+          <input
+            className="mb-4 w-full border rounded p-2"
+            placeholder="Search blogs"
+            value={search.blogs}
+            onChange={(e) => handleSearch("blogs", e.target.value)}
+          />
+
           <div className="space-y-2">
-            {blogs.map((b) => (
+            {blogsPg.pageItems.map((b) => (
               <div
                 key={b.id}
                 className="border rounded p-3 flex items-center justify-between"
               >
-                <p>{b.title}</p>
-                <button
-                  className="px-3 py-1 rounded bg-red text-white"
-                  onClick={() =>
-                    saveAction(async () => {
-                      if (!supabase) return;
-                      const { error } = await supabase
-                        .from("blogs")
-                        .delete()
-                        .eq("id", b.id);
-                      if (error) throw error;
-                    })
-                  }
-                >
-                  Delete
-                </button>
+                {editingId === `blog-${b.id}` ? (
+                  <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-2">
+                    <input
+                      className="border rounded p-2"
+                      value={editingDraft.title || ""}
+                      onChange={(e) =>
+                        setEditingDraft((d) => ({
+                          ...d,
+                          title: e.target.value,
+                        }))
+                      }
+                    />
+                    <input
+                      className="border rounded p-2"
+                      value={editingDraft.date || ""}
+                      onChange={(e) =>
+                        setEditingDraft((d) => ({ ...d, date: e.target.value }))
+                      }
+                    />
+                    <input
+                      className="border rounded p-2"
+                      type="number"
+                      value={editingDraft.views || 0}
+                      onChange={(e) =>
+                        setEditingDraft((d) => ({
+                          ...d,
+                          views: Number(e.target.value),
+                        }))
+                      }
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        className="px-3 py-1 rounded bg-blue text-white"
+                        onClick={() =>
+                          saveAction(async () => {
+                            if (!supabase) return;
+                            const { error } = await supabase
+                              .from("blogs")
+                              .update({
+                                title: editingDraft.title,
+                                date: editingDraft.date,
+                                views: editingDraft.views,
+                              })
+                              .eq("id", b.id);
+                            if (error) throw error;
+                            cancelEdit();
+                          })
+                        }
+                      >
+                        Save
+                      </button>
+                      <button
+                        className="px-3 py-1 rounded bg-gray-2"
+                        onClick={cancelEdit}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p>{b.title}</p>
+                    <div className="flex gap-2">
+                      <button
+                        className="px-3 py-1 rounded bg-blue text-white"
+                        onClick={() => startEdit(`blog-${b.id}`, b)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="px-3 py-1 rounded bg-red text-white"
+                        onClick={() =>
+                          saveAction(async () => {
+                            if (!supabase) return;
+                            const { error } = await supabase
+                              .from("blogs")
+                              .delete()
+                              .eq("id", b.id);
+                            if (error) throw error;
+                          })
+                        }
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
+          {renderPager("blogs", blogsPg.totalPages)}
         </div>
       )}
 
@@ -610,31 +970,112 @@ const AdminDashboard = () => {
             Add testimonial
           </button>
 
+          <input
+            className="mb-4 w-full border rounded p-2"
+            placeholder="Search testimonials"
+            value={search.testimonials}
+            onChange={(e) => handleSearch("testimonials", e.target.value)}
+          />
+
           <div className="space-y-2">
-            {testimonials.map((t) => (
+            {testimonialsPg.pageItems.map((t) => (
               <div
                 key={t.id}
                 className="border rounded p-3 flex items-center justify-between"
               >
-                <p>{t.author_name}</p>
-                <button
-                  className="px-3 py-1 rounded bg-red text-white"
-                  onClick={() =>
-                    saveAction(async () => {
-                      if (!supabase) return;
-                      const { error } = await supabase
-                        .from("testimonials")
-                        .delete()
-                        .eq("id", t.id);
-                      if (error) throw error;
-                    })
-                  }
-                >
-                  Delete
-                </button>
+                {editingId === `testimonial-${t.id}` ? (
+                  <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-2">
+                    <input
+                      className="border rounded p-2"
+                      value={editingDraft.author_name || ""}
+                      onChange={(e) =>
+                        setEditingDraft((d) => ({
+                          ...d,
+                          author_name: e.target.value,
+                        }))
+                      }
+                    />
+                    <input
+                      className="border rounded p-2"
+                      value={editingDraft.author_role || ""}
+                      onChange={(e) =>
+                        setEditingDraft((d) => ({
+                          ...d,
+                          author_role: e.target.value,
+                        }))
+                      }
+                    />
+                    <input
+                      className="border rounded p-2"
+                      value={editingDraft.author_img || ""}
+                      onChange={(e) =>
+                        setEditingDraft((d) => ({
+                          ...d,
+                          author_img: e.target.value,
+                        }))
+                      }
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        className="px-3 py-1 rounded bg-blue text-white"
+                        onClick={() =>
+                          saveAction(async () => {
+                            if (!supabase) return;
+                            const { error } = await supabase
+                              .from("testimonials")
+                              .update({
+                                author_name: editingDraft.author_name,
+                                author_role: editingDraft.author_role,
+                                author_img: editingDraft.author_img,
+                              })
+                              .eq("id", t.id);
+                            if (error) throw error;
+                            cancelEdit();
+                          })
+                        }
+                      >
+                        Save
+                      </button>
+                      <button
+                        className="px-3 py-1 rounded bg-gray-2"
+                        onClick={cancelEdit}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p>{t.author_name}</p>
+                    <div className="flex gap-2">
+                      <button
+                        className="px-3 py-1 rounded bg-blue text-white"
+                        onClick={() => startEdit(`testimonial-${t.id}`, t)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="px-3 py-1 rounded bg-red text-white"
+                        onClick={() =>
+                          saveAction(async () => {
+                            if (!supabase) return;
+                            const { error } = await supabase
+                              .from("testimonials")
+                              .delete()
+                              .eq("id", t.id);
+                            if (error) throw error;
+                          })
+                        }
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
+          {renderPager("testimonials", testimonialsPg.totalPages)}
         </div>
       )}
 
@@ -723,8 +1164,15 @@ const AdminDashboard = () => {
             Add order
           </button>
 
+          <input
+            className="mb-4 w-full border rounded p-2"
+            placeholder="Search orders"
+            value={search.orders}
+            onChange={(e) => handleSearch("orders", e.target.value)}
+          />
+
           <div className="space-y-2">
-            {orders.map((o) => (
+            {ordersPg.pageItems.map((o) => (
               <div
                 key={o.id}
                 className="border rounded p-3 flex flex-wrap items-center justify-between gap-3"
@@ -738,6 +1186,12 @@ const AdminDashboard = () => {
                   </p>
                 </div>
                 <div className="flex gap-2">
+                  <button
+                    className="px-3 py-1 rounded bg-blue text-white"
+                    onClick={() => startEdit(`order-${o.id}`, o)}
+                  >
+                    Edit
+                  </button>
                   <select
                     className="border rounded p-1"
                     value={o.status}
@@ -775,14 +1229,100 @@ const AdminDashboard = () => {
               </div>
             ))}
           </div>
+
+          {editingId.startsWith("order-") ? (
+            <div className="mt-4 border rounded p-4 bg-gray-1">
+              <p className="font-medium mb-2">Edit order</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <input
+                  className="border rounded p-2"
+                  value={editingDraft.order_id || ""}
+                  onChange={(e) =>
+                    setEditingDraft((d: any) => ({
+                      ...d,
+                      order_id: e.target.value,
+                    }))
+                  }
+                />
+                <input
+                  className="border rounded p-2"
+                  value={editingDraft.title || ""}
+                  onChange={(e) =>
+                    setEditingDraft((d: any) => ({
+                      ...d,
+                      title: e.target.value,
+                    }))
+                  }
+                />
+                <input
+                  className="border rounded p-2"
+                  value={editingDraft.created_at_label || ""}
+                  onChange={(e) =>
+                    setEditingDraft((d: any) => ({
+                      ...d,
+                      created_at_label: e.target.value,
+                    }))
+                  }
+                />
+                <input
+                  className="border rounded p-2"
+                  value={editingDraft.total || ""}
+                  onChange={(e) =>
+                    setEditingDraft((d: any) => ({
+                      ...d,
+                      total: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="mt-3 flex gap-2">
+                <button
+                  className="px-3 py-1 rounded bg-blue text-white"
+                  onClick={() =>
+                    saveAction(async () => {
+                      if (!supabase) return;
+                      const id = String(editingDraft.id || "");
+                      const { error } = await supabase
+                        .from("orders")
+                        .update({
+                          order_id: editingDraft.order_id,
+                          title: editingDraft.title,
+                          created_at_label: editingDraft.created_at_label,
+                          total: editingDraft.total,
+                        })
+                        .eq("id", id);
+                      if (error) throw error;
+                      cancelEdit();
+                    })
+                  }
+                >
+                  Save
+                </button>
+                <button
+                  className="px-3 py-1 rounded bg-gray-2"
+                  onClick={cancelEdit}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {renderPager("orders", ordersPg.totalPages)}
         </div>
       )}
 
       {activeTab === "users" && (
         <div>
           <h3 className="font-medium text-lg mb-3">Users ({users.length})</h3>
+          <input
+            className="mb-4 w-full border rounded p-2"
+            placeholder="Search users"
+            value={search.users}
+            onChange={(e) => handleSearch("users", e.target.value)}
+          />
           <div className="space-y-2">
-            {users.map((u) => (
+            {usersPg.pageItems.map((u) => (
               <div
                 key={u.id}
                 className="border rounded p-3 flex flex-wrap items-center justify-between gap-3"
@@ -812,6 +1352,7 @@ const AdminDashboard = () => {
               </div>
             ))}
           </div>
+          {renderPager("users", usersPg.totalPages)}
         </div>
       )}
     </div>
