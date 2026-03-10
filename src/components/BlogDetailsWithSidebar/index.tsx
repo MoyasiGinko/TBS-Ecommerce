@@ -3,11 +3,12 @@ import Breadcrumb from "../Common/Breadcrumb";
 import SearchForm from "../Blog/SearchForm";
 import LatestPosts from "../Blog/LatestPosts";
 import LatestProducts from "../Blog/LatestProducts";
-import blogData from "../BlogGrid/blogData";
 import Image from "next/image";
-import shopData from "../Shop/shopData"; 
+import { getBlogs, getProducts } from "@/lib/data/store";
 
-const BlogDetailsWithSidebar = () => {
+const BlogDetailsWithSidebar = async () => {
+  const [blogs, products] = await Promise.all([getBlogs(), getProducts()]);
+
   return (
     <>
       <Breadcrumb
@@ -269,10 +270,10 @@ const BlogDetailsWithSidebar = () => {
               <SearchForm />
 
               {/* <!-- Recent Posts box --> */}
-              <LatestPosts blogs={blogData} />
+              <LatestPosts blogs={blogs} />
 
               {/* <!-- Latest Products box --> */}
-              <LatestProducts products={shopData} />
+              <LatestProducts products={products} />
 
               {/* <!-- Popular Category box --> */}
               <div className="shadow-1 bg-white rounded-xl mt-7.5">

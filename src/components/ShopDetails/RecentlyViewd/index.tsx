@@ -1,9 +1,11 @@
 "use client";
-import React from "react";
-import shopData from "@/components/Shop/shopData";
+import React, { useEffect, useState } from "react";
 import ProductItem from "@/components/Common/ProductItem";
 import Image from "next/image";
 import Link from "next/link";
+import { Product } from "@/types/product";
+import { fallbackProducts } from "@/lib/data/fallback";
+import { getProductsClient } from "@/lib/data/store";
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import { useCallback, useRef } from "react";
@@ -12,6 +14,7 @@ import "swiper/css";
 
 const RecentlyViewdItems = () => {
   const sliderRef = useRef(null);
+  const [products, setProducts] = useState<Product[]>(fallbackProducts);
 
   const handlePrev = useCallback(() => {
     if (!sliderRef.current) return;
@@ -21,6 +24,14 @@ const RecentlyViewdItems = () => {
   const handleNext = useCallback(() => {
     if (!sliderRef.current) return;
     sliderRef.current.swiper.slideNext();
+  }, []);
+
+  useEffect(() => {
+    getProductsClient()
+      .then(setProducts)
+      .catch(() => {
+        setProducts(fallbackProducts);
+      });
   }, []);
 
   return (
@@ -89,7 +100,7 @@ const RecentlyViewdItems = () => {
             spaceBetween={20}
             className="justify-between"
           >
-            {shopData.map((item, key) => (
+            {products.map((item, key) => (
               <SwiperSlide key={key}>
                 <ProductItem item={item} />
               </SwiperSlide>

@@ -1,8 +1,10 @@
 "use client";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { useCallback, useRef } from "react";
-import testimonialsData from "./testimonialsData";
+import { useCallback, useRef, useEffect, useState } from "react";
 import Image from "next/image";
+import { Testimonial } from "@/types/testimonial";
+import { fallbackTestimonials } from "@/lib/data/fallback";
+import { getTestimonialsClient } from "@/lib/data/store";
 
 // Import Swiper styles
 import "swiper/css/navigation";
@@ -11,6 +13,8 @@ import SingleItem from "./SingleItem";
 
 const Testimonials = () => {
   const sliderRef = useRef(null);
+  const [testimonials, setTestimonials] =
+    useState<Testimonial[]>(fallbackTestimonials);
 
   const handlePrev = useCallback(() => {
     if (!sliderRef.current) return;
@@ -20,6 +24,14 @@ const Testimonials = () => {
   const handleNext = useCallback(() => {
     if (!sliderRef.current) return;
     sliderRef.current.swiper.slideNext();
+  }, []);
+
+  useEffect(() => {
+    getTestimonialsClient()
+      .then(setTestimonials)
+      .catch(() => {
+        setTestimonials(fallbackTestimonials);
+      });
   }, []);
 
   return (
@@ -102,7 +114,7 @@ const Testimonials = () => {
                 },
               }}
             >
-              {testimonialsData.map((item, key) => (
+              {testimonials.map((item, key) => (
                 <SwiperSlide key={key}>
                   <SingleItem testimonial={item} />
                 </SwiperSlide>

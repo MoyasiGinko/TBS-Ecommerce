@@ -7,14 +7,17 @@ import GenderDropdown from "./GenderDropdown";
 import SizeDropdown from "./SizeDropdown";
 import ColorsDropdwon from "./ColorsDropdwon";
 import PriceDropdown from "./PriceDropdown";
-import shopData from "../Shop/shopData";
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
+import { Product } from "@/types/product";
+import { fallbackProducts } from "@/lib/data/fallback";
+import { getProductsClient } from "@/lib/data/store";
 
 const ShopWithSidebar = () => {
   const [productStyle, setProductStyle] = useState("grid");
   const [productSidebar, setProductSidebar] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
+  const [products, setProducts] = useState<Product[]>(fallbackProducts);
 
   const handleStickyMenu = () => {
     if (window.scrollY >= 80) {
@@ -81,6 +84,12 @@ const ShopWithSidebar = () => {
   useEffect(() => {
     window.addEventListener("scroll", handleStickyMenu);
 
+    getProductsClient()
+      .then(setProducts)
+      .catch(() => {
+        setProducts(fallbackProducts);
+      });
+
     // closing sidebar while clicking outside
     function handleClickOutside(event) {
       if (!event.target.closest(".sidebar-content")) {
@@ -95,7 +104,7 @@ const ShopWithSidebar = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  });
+  }, [productSidebar]);
 
   return (
     <>
@@ -278,12 +287,12 @@ const ShopWithSidebar = () => {
                     : "flex flex-col gap-7.5"
                 }`}
               >
-                {shopData.map((item, key) =>
+                {products.map((item, key) =>
                   productStyle === "grid" ? (
                     <SingleGridItem item={item} key={key} />
                   ) : (
                     <SingleListItem item={item} key={key} />
-                  )
+                  ),
                 )}
               </div>
               {/* <!-- Products Grid Tab Content End --> */}
