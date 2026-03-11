@@ -813,7 +813,7 @@ const AdminDashboard = () => {
             />
             <input
               className={inputClass}
-              placeholder="Model"
+              placeholder="Model / SKU"
               value={newProduct.details.model}
               onChange={(e) =>
                 setNewProduct((v) => ({
@@ -868,7 +868,7 @@ const AdminDashboard = () => {
             />
             <input
               className={inputClass}
-              placeholder="Storage options comma separated"
+              placeholder="Variant options comma separated"
               value={newProduct.details.storageOptions}
               onChange={(e) =>
                 setNewProduct((v) => ({
@@ -879,7 +879,7 @@ const AdminDashboard = () => {
             />
             <input
               className={inputClass}
-              placeholder="Type options comma separated"
+              placeholder="Option group 2 (comma separated)"
               value={newProduct.details.typeOptions}
               onChange={(e) =>
                 setNewProduct((v) => ({
@@ -890,7 +890,7 @@ const AdminDashboard = () => {
             />
             <input
               className={inputClass}
-              placeholder="SIM options comma separated"
+              placeholder="Option group 3 (comma separated)"
               value={newProduct.details.simOptions}
               onChange={(e) =>
                 setNewProduct((v) => ({
@@ -949,7 +949,7 @@ const AdminDashboard = () => {
             />
             <textarea
               className={`${inputClass} md:col-span-2 min-h-[110px]`}
-              placeholder="Additional information (one per line: Label: Value)"
+              placeholder="Specifications / additional info (one per line: Label: Value)"
               value={newProduct.details.additionalInformation}
               onChange={(e) =>
                 setNewProduct((v) => ({
@@ -1178,7 +1178,7 @@ const AdminDashboard = () => {
                     />
                     <input
                       className={inputClass}
-                      placeholder="Model"
+                      placeholder="Model / SKU"
                       value={editingDraft.details?.model || ""}
                       onChange={(e) =>
                         setEditingDraft((d) => ({
@@ -1248,7 +1248,7 @@ const AdminDashboard = () => {
                     />
                     <input
                       className={inputClass}
-                      placeholder="Storage options comma separated"
+                      placeholder="Variant options comma separated"
                       value={editingDraft.details?.storageOptions || ""}
                       onChange={(e) =>
                         setEditingDraft((d) => ({
@@ -1262,7 +1262,7 @@ const AdminDashboard = () => {
                     />
                     <input
                       className={inputClass}
-                      placeholder="Type options comma separated"
+                      placeholder="Option group 2 (comma separated)"
                       value={editingDraft.details?.typeOptions || ""}
                       onChange={(e) =>
                         setEditingDraft((d) => ({
@@ -1276,7 +1276,7 @@ const AdminDashboard = () => {
                     />
                     <input
                       className={inputClass}
-                      placeholder="SIM options comma separated"
+                      placeholder="Option group 3 (comma separated)"
                       value={editingDraft.details?.simOptions || ""}
                       onChange={(e) =>
                         setEditingDraft((d) => ({
@@ -1318,7 +1318,7 @@ const AdminDashboard = () => {
                     />
                     <textarea
                       className={`${inputClass} md:col-span-2 min-h-[110px]`}
-                      placeholder="Additional information (one per line: Label: Value)"
+                      placeholder="Specifications / additional info (one per line: Label: Value)"
                       value={editingDraft.details?.additionalInformation || ""}
                       onChange={(e) =>
                         setEditingDraft((d) => ({
