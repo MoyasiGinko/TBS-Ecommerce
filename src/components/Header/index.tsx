@@ -15,6 +15,9 @@ import { Menu } from "@/types/Menu";
 import { Product } from "@/types/product";
 import { BlogItem } from "@/types/blogItem";
 import { getBlogsClient, getProductsClient } from "@/lib/data/store";
+import { getCurrentProfile } from "@/lib/supabase/auth";
+import { UserProfile } from "@/types/user";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const Header = () => {
   const router = useRouter();
@@ -22,6 +25,7 @@ const Header = () => {
   const [searchType, setSearchType] = useState("products");
   const [products, setProducts] = useState<Product[]>([]);
   const [blogs, setBlogs] = useState<BlogItem[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
@@ -92,6 +96,33 @@ const Header = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    const syncProfile = async () => {
+      const currentProfile = await getCurrentProfile();
+      setProfile(currentProfile);
+    };
+
+    syncProfile();
+
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      syncProfile();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const accountHref = profile ? "/my-account" : "/signin";
+  const accountDisplayName = profile
+    ? `${(profile.fullName || profile.email || "User").trim().slice(0, 6)}..`
+    : "Sign In";
 
   const searchTypeOptions = [
     { label: "Products", value: "products" },
@@ -381,7 +412,7 @@ const Header = () => {
 
             <div className="flex w-full lg:w-auto justify-between items-center gap-5">
               <div className="flex items-center gap-5">
-                <Link href="/signin" className="flex items-center gap-2.5">
+                <Link href={accountHref} className="flex items-center gap-2.5">
                   <svg
                     width="24"
                     height="24"
@@ -408,7 +439,7 @@ const Header = () => {
                       account
                     </span>
                     <p className="font-medium text-custom-sm text-dark">
-                      Sign In
+                      {accountDisplayName}
                     </p>
                   </div>
                 </Link>

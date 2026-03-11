@@ -1,7 +1,7 @@
 "use client";
 import Breadcrumb from "@/components/Common/Breadcrumb";
 import Link from "next/link";
-import React, { FormEvent, useState } from "react";
+import React, { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   getCurrentProfile,
@@ -15,6 +15,29 @@ const Signin = () => {
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const redirectIfAuthenticated = async () => {
+      const profile = await getCurrentProfile();
+      if (!isMounted) return;
+
+      if (profile) {
+        router.replace("/my-account");
+        return;
+      }
+
+      setIsCheckingSession(false);
+    };
+
+    redirectIfAuthenticated();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -35,13 +58,23 @@ const Signin = () => {
     }
     setIsSubmitting(false);
 
-    if (profile?.role === "admin" || profile?.role === "manager") {
-      router.push("/admin");
-      return;
-    }
-
     router.push("/my-account");
   };
+
+  if (isCheckingSession) {
+    return (
+      <>
+        <Breadcrumb title={"Signin"} pages={["Signin"]} />
+        <section className="overflow-hidden py-20 bg-gray-2">
+          <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
+            <div className="max-w-[570px] w-full mx-auto rounded-xl bg-white shadow-1 p-6 sm:p-8 xl:p-11 text-center">
+              <p>Checking your session...</p>
+            </div>
+          </div>
+        </section>
+      </>
+    );
+  }
 
   return (
     <>

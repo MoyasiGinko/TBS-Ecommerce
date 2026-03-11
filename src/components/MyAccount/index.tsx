@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import Image from "next/image";
+import Link from "next/link";
 import AddressModal from "./AddressModal";
 import Orders from "../Orders";
 import { getCurrentProfile, signOutUser } from "@/lib/supabase/auth";
@@ -67,6 +68,8 @@ const MyAccount = () => {
   const memberSince = profile?.createdAt
     ? new Date(profile.createdAt).toLocaleDateString()
     : "Recently";
+  const canAccessAdmin =
+    profile?.role === "admin" || profile?.role === "manager";
 
   return (
     <>
@@ -152,6 +155,17 @@ const MyAccount = () => {
                     From your account dashboard you can view your recent orders,
                     manage your addresses, and edit your account details.
                   </p>
+
+                  {canAccessAdmin ? (
+                    <div className="mt-6">
+                      <Link
+                        href="/admin"
+                        className="inline-flex font-medium text-white bg-dark py-3 px-7 rounded-lg ease-out duration-200 hover:bg-blue"
+                      >
+                        Go to Admin Dashboard
+                      </Link>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
 
