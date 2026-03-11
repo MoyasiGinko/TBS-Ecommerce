@@ -35,8 +35,8 @@ const CustomSelect = ({ options, value, onChange }: CustomSelectProps) => {
   return (
     <div
       ref={selectRef}
-      className="dropdown-content custom-select relative"
-      style={{ width: "200px" }}
+      className="dropdown-content custom-select relative shrink-0"
+      style={{ minWidth: "200px" }}
     >
       <button
         type="button"
