@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import Breadcrumb from "../Common/Breadcrumb";
 import CustomSelect from "./CustomSelect";
 import CategoryDropdown from "./CategoryDropdown";
@@ -14,6 +15,7 @@ import { Product } from "@/types/product";
 import { getProductsClient } from "@/lib/data/store";
 
 const ShopWithSidebar = () => {
+  const searchParams = useSearchParams();
   const [productStyle, setProductStyle] = useState("grid");
   const [productSidebar, setProductSidebar] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
@@ -24,6 +26,7 @@ const ShopWithSidebar = () => {
   const [selectedGender, setSelectedGender] = useState<string>("");
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   const handleStickyMenu = () => {
     if (window.scrollY >= 80) {
@@ -145,6 +148,8 @@ const ShopWithSidebar = () => {
   };
 
   const filteredProducts = useMemo(() => {
+    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+
     const next = products.filter((item) => {
       const itemPrice = Number(item.discountedPrice || item.price || 0);
       const matchesCategory =
@@ -159,6 +164,19 @@ const ShopWithSidebar = () => {
         item.simOptions.some((opt) => opt.title === selectedSize);
       const matchesColor =
         !selectedColor || item.colors.includes(selectedColor);
+      const matchesSearch =
+        !normalizedSearchTerm ||
+        [
+          item.title,
+          item.category,
+          item.shortDescription,
+          item.description,
+          item.brand,
+          item.model,
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedSearchTerm);
       const matchesPrice =
         itemPrice >= selectedPriceRange.from &&
         itemPrice <= selectedPriceRange.to;
@@ -168,6 +186,7 @@ const ShopWithSidebar = () => {
         matchesGender &&
         matchesSize &&
         matchesColor &&
+        matchesSearch &&
         matchesPrice
       );
     });
@@ -187,6 +206,7 @@ const ShopWithSidebar = () => {
     selectedGender,
     selectedSize,
     selectedColor,
+    searchTerm,
     selectedPriceRange.from,
     selectedPriceRange.to,
     selectedSort,
@@ -197,8 +217,17 @@ const ShopWithSidebar = () => {
     setSelectedGender("");
     setSelectedSize("");
     setSelectedColor("");
+    setSearchTerm("");
     setSelectedPriceRange({ from: priceRange.min, to: priceRange.max });
   };
+
+  useEffect(() => {
+    const query = searchParams.get("q") || "";
+    const category = searchParams.get("category") || "";
+
+    setSearchTerm(query.trim());
+    setSelectedCategory(category.trim());
+  }, [searchParams]);
 
   useEffect(() => {
     window.addEventListener("scroll", handleStickyMenu);
