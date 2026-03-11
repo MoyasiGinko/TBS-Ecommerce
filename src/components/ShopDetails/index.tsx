@@ -32,11 +32,11 @@ const normalizeProduct = (value: any): Product | null => {
     additionalInformation: Array.isArray(value.additionalInformation)
       ? value.additionalInformation
       : [],
-    storageOptions: Array.isArray(value.storageOptions)
-      ? value.storageOptions
+    optionsGroup1: Array.isArray(value.optionsGroup1)
+      ? value.optionsGroup1
       : [],
-    typeOptions: Array.isArray(value.typeOptions) ? value.typeOptions : [],
-    simOptions: Array.isArray(value.simOptions) ? value.simOptions : [],
+    optionsGroup2: Array.isArray(value.optionsGroup2) ? value.optionsGroup2 : [],
+    optionsGroup3: Array.isArray(value.optionsGroup3) ? value.optionsGroup3 : [],
     imgs: {
       thumbnails: Array.isArray(value.imgs?.thumbnails)
         ? value.imgs.thumbnails
@@ -124,9 +124,9 @@ const ShopDetails = () => {
     setPreviewIndex(0);
     setQuantity(1);
     setSelectedColor(product.colors[0] || "");
-    setSelectedStorage(product.storageOptions[0]?.id || "");
-    setSelectedType(product.typeOptions[0]?.id || "");
-    setSelectedSim(product.simOptions[0]?.id || "");
+    setSelectedStorage(product.optionsGroup1[0]?.id || "");
+    setSelectedType(product.optionsGroup2[0]?.id || "");
+    setSelectedSim(product.optionsGroup3[0]?.id || "");
   }, [product]);
 
   const gallery = useMemo(() => {
@@ -401,13 +401,13 @@ const ShopDetails = () => {
                   </div>
                 )}
 
-                {product.storageOptions.length > 0 && (
+                {product.optionsGroup1.length > 0 && (
                   <div className="flex flex-wrap items-center gap-4">
                     <h4 className="min-w-[90px] font-medium text-dark">
-                      Storage:
+                      Options:
                     </h4>
                     <div className="flex flex-wrap gap-3">
-                      {product.storageOptions.map((option) => (
+                      {product.optionsGroup1.map((option) => (
                         <button
                           key={option.id}
                           onClick={() => setSelectedStorage(option.id)}
@@ -424,13 +424,13 @@ const ShopDetails = () => {
                   </div>
                 )}
 
-                {product.typeOptions.length > 0 && (
+                {product.optionsGroup2.length > 0 && (
                   <div className="flex flex-wrap items-center gap-4">
                     <h4 className="min-w-[90px] font-medium text-dark">
-                      Type:
+                      More Options:
                     </h4>
                     <div className="flex flex-wrap gap-3">
-                      {product.typeOptions.map((option) => (
+                      {product.optionsGroup2.map((option) => (
                         <button
                           key={option.id}
                           onClick={() => setSelectedType(option.id)}
@@ -447,11 +447,13 @@ const ShopDetails = () => {
                   </div>
                 )}
 
-                {product.simOptions.length > 0 && (
+                {product.optionsGroup3.length > 0 && (
                   <div className="flex flex-wrap items-center gap-4">
-                    <h4 className="min-w-[90px] font-medium text-dark">Sim:</h4>
+                    <h4 className="min-w-[90px] font-medium text-dark">
+                      Additional Options:
+                    </h4>
                     <div className="flex flex-wrap gap-3">
-                      {product.simOptions.map((option) => (
+                      {product.optionsGroup3.map((option) => (
                         <button
                           key={option.id}
                           onClick={() => setSelectedSim(option.id)}

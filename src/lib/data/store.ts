@@ -51,7 +51,7 @@ const mapProduct = (row: any): Product => ({
   rating: Number(row.details?.rating ?? 4.7),
   price: Number(row.price ?? 0),
   discountedPrice: Number(row.discounted_price ?? row.price ?? 0),
-  category: String(row.details?.category ?? "Electronics"),
+  category: String(row.details?.category ?? "General"),
   shortDescription: String(
     row.details?.shortDescription ??
       "A premium product sourced from the catalog with live pricing and images.",
@@ -78,12 +78,12 @@ const mapProduct = (row: any): Product => ({
     { label: "Model", value: String(row.details?.model ?? row.title ?? "") },
     {
       label: "Category",
-      value: String(row.details?.category ?? "Electronics"),
+      value: String(row.details?.category ?? "General"),
     },
   ]),
-  storageOptions: normalizeOptionList(row.details?.storageOptions, []),
-  typeOptions: normalizeOptionList(row.details?.typeOptions, []),
-  simOptions: normalizeOptionList(row.details?.simOptions, []),
+  optionsGroup1: normalizeOptionList(row.details?.optionsGroup1, []),
+  optionsGroup2: normalizeOptionList(row.details?.optionsGroup2, []),
+  optionsGroup3: normalizeOptionList(row.details?.optionsGroup3, []),
   imgs: {
     thumbnails: Array.isArray(row.thumbnails) ? row.thumbnails : [],
     previews: Array.isArray(row.previews) ? row.previews : [],

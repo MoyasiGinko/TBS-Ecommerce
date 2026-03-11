@@ -27,15 +27,15 @@ const defaultDetails = {
     { label: "Model", value: "Standard" },
     { label: "Category", value: "Electronics" },
   ],
-  storageOptions: [
+  optionsGroup1: [
     { id: "standard", title: "Standard" },
     { id: "premium", title: "Premium" },
   ],
-  typeOptions: [
+  optionsGroup2: [
     { id: "regular", title: "Regular" },
     { id: "deluxe", title: "Deluxe" },
   ],
-  simOptions: [
+  optionsGroup3: [
     { id: "default", title: "Default" },
     { id: "plus", title: "Plus" },
   ],
@@ -95,16 +95,16 @@ export const fallbackProducts: Product[] = [
     id: 2,
     brand: "Apple",
     category: "Smartphones",
-    storageOptions: [
+    optionsGroup1: [
       { id: "128gb", title: "128 GB" },
       { id: "256gb", title: "256 GB" },
       { id: "512gb", title: "512 GB" },
     ],
-    typeOptions: [
+    optionsGroup2: [
       { id: "active", title: "Active" },
       { id: "inactive", title: "Inactive" },
     ],
-    simOptions: [
+    optionsGroup3: [
       { id: "dual", title: "Dual" },
       { id: "e-sim", title: "E Sim" },
     ],

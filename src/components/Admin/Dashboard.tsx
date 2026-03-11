@@ -79,9 +79,9 @@ type ProductDetailsForm = {
   highlights: string;
   specificationSummary: string;
   careInstructions: string;
-  storageOptions: string;
-  typeOptions: string;
-  simOptions: string;
+  optionsGroup1: string;
+  optionsGroup2: string;
+  optionsGroup3: string;
   additionalInformation: string;
 };
 
@@ -95,7 +95,7 @@ const PAGE_SIZE = 6;
 
 const defaultProductDetails = (): ProductDetailsForm => ({
   rating: 4.7,
-  category: "Electronics",
+  category: "General",
   shortDescription: "",
   description: "",
   availability: "In Stock",
@@ -107,9 +107,9 @@ const defaultProductDetails = (): ProductDetailsForm => ({
   highlights: "",
   specificationSummary: "",
   careInstructions: "",
-  storageOptions: "",
-  typeOptions: "",
-  simOptions: "",
+  optionsGroup1: "",
+  optionsGroup2: "",
+  optionsGroup3: "",
   additionalInformation: "",
 });
 
@@ -153,9 +153,9 @@ const fromProductDetails = (details: Record<string, any>): ProductDetailsForm =>
     highlights: toCsv(details?.highlights),
     specificationSummary: String(details?.specificationSummary || ""),
     careInstructions: String(details?.careInstructions || ""),
-    storageOptions: optionCsv(details?.storageOptions),
-    typeOptions: optionCsv(details?.typeOptions),
-    simOptions: optionCsv(details?.simOptions),
+    optionsGroup1: optionCsv(details?.optionsGroup1),
+    optionsGroup2: optionCsv(details?.optionsGroup2),
+    optionsGroup3: optionCsv(details?.optionsGroup3),
     additionalInformation,
   };
 };
@@ -187,9 +187,9 @@ const toProductDetailsPayload = (details: ProductDetailsForm) => ({
     .filter(Boolean),
   specificationSummary: details.specificationSummary,
   careInstructions: details.careInstructions,
-  storageOptions: parseOptionCsv(details.storageOptions),
-  typeOptions: parseOptionCsv(details.typeOptions),
-  simOptions: parseOptionCsv(details.simOptions),
+  optionsGroup1: parseOptionCsv(details.optionsGroup1),
+  optionsGroup2: parseOptionCsv(details.optionsGroup2),
+  optionsGroup3: parseOptionCsv(details.optionsGroup3),
   additionalInformation: details.additionalInformation
     .split("\n")
     .map((line) => line.trim())
@@ -868,34 +868,34 @@ const AdminDashboard = () => {
             />
             <input
               className={inputClass}
-              placeholder="Variant options comma separated"
-              value={newProduct.details.storageOptions}
+              placeholder="Options group 1 (comma separated)"
+              value={newProduct.details.optionsGroup1}
               onChange={(e) =>
                 setNewProduct((v) => ({
                   ...v,
-                  details: { ...v.details, storageOptions: e.target.value },
+                  details: { ...v.details, optionsGroup1: e.target.value },
                 }))
               }
             />
             <input
               className={inputClass}
               placeholder="Option group 2 (comma separated)"
-              value={newProduct.details.typeOptions}
+              value={newProduct.details.optionsGroup2}
               onChange={(e) =>
                 setNewProduct((v) => ({
                   ...v,
-                  details: { ...v.details, typeOptions: e.target.value },
+                  details: { ...v.details, optionsGroup2: e.target.value },
                 }))
               }
             />
             <input
               className={inputClass}
               placeholder="Option group 3 (comma separated)"
-              value={newProduct.details.simOptions}
+              value={newProduct.details.optionsGroup3}
               onChange={(e) =>
                 setNewProduct((v) => ({
                   ...v,
-                  details: { ...v.details, simOptions: e.target.value },
+                  details: { ...v.details, optionsGroup3: e.target.value },
                 }))
               }
             />
@@ -1248,14 +1248,14 @@ const AdminDashboard = () => {
                     />
                     <input
                       className={inputClass}
-                      placeholder="Variant options comma separated"
-                      value={editingDraft.details?.storageOptions || ""}
+                      placeholder="Options group 1 (comma separated)"
+                      value={editingDraft.details?.optionsGroup1 || ""}
                       onChange={(e) =>
                         setEditingDraft((d) => ({
                           ...d,
                           details: {
                             ...(d.details || {}),
-                            storageOptions: e.target.value,
+                            optionsGroup1: e.target.value,
                           },
                         }))
                       }
@@ -1263,13 +1263,13 @@ const AdminDashboard = () => {
                     <input
                       className={inputClass}
                       placeholder="Option group 2 (comma separated)"
-                      value={editingDraft.details?.typeOptions || ""}
+                      value={editingDraft.details?.optionsGroup2 || ""}
                       onChange={(e) =>
                         setEditingDraft((d) => ({
                           ...d,
                           details: {
                             ...(d.details || {}),
-                            typeOptions: e.target.value,
+                            optionsGroup2: e.target.value,
                           },
                         }))
                       }
@@ -1277,13 +1277,13 @@ const AdminDashboard = () => {
                     <input
                       className={inputClass}
                       placeholder="Option group 3 (comma separated)"
-                      value={editingDraft.details?.simOptions || ""}
+                      value={editingDraft.details?.optionsGroup3 || ""}
                       onChange={(e) =>
                         setEditingDraft((d) => ({
                           ...d,
                           details: {
                             ...(d.details || {}),
-                            simOptions: e.target.value,
+                            optionsGroup3: e.target.value,
                           },
                         }))
                       }

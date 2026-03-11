@@ -89,9 +89,9 @@ const ShopWithSidebar = () => {
     const set = new Set<string>();
 
     products.forEach((item) => {
-      item.storageOptions.forEach((opt) => set.add(opt.title));
-      item.typeOptions.forEach((opt) => set.add(opt.title));
-      item.simOptions.forEach((opt) => set.add(opt.title));
+      item.optionsGroup1.forEach((opt) => set.add(opt.title));
+      item.optionsGroup2.forEach((opt) => set.add(opt.title));
+      item.optionsGroup3.forEach((opt) => set.add(opt.title));
     });
 
     return Array.from(set);
@@ -159,9 +159,9 @@ const ShopWithSidebar = () => {
         !selectedGender || getGenderFromProduct(item) === selectedGender;
       const matchesSize =
         !selectedSize ||
-        item.storageOptions.some((opt) => opt.title === selectedSize) ||
-        item.typeOptions.some((opt) => opt.title === selectedSize) ||
-        item.simOptions.some((opt) => opt.title === selectedSize);
+        item.optionsGroup1.some((opt) => opt.title === selectedSize) ||
+        item.optionsGroup2.some((opt) => opt.title === selectedSize) ||
+        item.optionsGroup3.some((opt) => opt.title === selectedSize);
       const matchesColor =
         !selectedColor || item.colors.includes(selectedColor);
       const matchesSearch =

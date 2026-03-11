@@ -36,9 +36,9 @@ set details = jsonb_build_object(
   'highlights', jsonb_build_array('Free delivery available', 'Plug and play setup'),
   'specificationSummary', 'Responsive gaming controls with durable construction and USB connectivity.',
   'careInstructions', 'Store in a dry place and avoid cable strain during transport.',
-  'storageOptions', '[]'::jsonb,
-  'typeOptions', jsonb_build_array(jsonb_build_object('id', 'standard', 'title', 'Standard')),
-  'simOptions', '[]'::jsonb,
+  'optionsGroup1', '[]'::jsonb,
+  'optionsGroup2', jsonb_build_array(jsonb_build_object('id', 'standard', 'title', 'Standard')),
+  'optionsGroup3', '[]'::jsonb,
   'additionalInformation', jsonb_build_array(
     jsonb_build_object('label', 'Brand', 'value', 'Havit'),
     jsonb_build_object('label', 'Model', 'value', 'HV-G69'),
@@ -62,16 +62,16 @@ set details = jsonb_build_object(
   'highlights', jsonb_build_array('Free delivery available', 'Sales 30% Off Use Code: PROMO30'),
   'specificationSummary', 'Premium smartphone with OLED display, high-performance chipset, and multiple storage options.',
   'careInstructions', 'Use a protective case, avoid extreme temperatures, and clean with a microfiber cloth.',
-  'storageOptions', jsonb_build_array(
+  'optionsGroup1', jsonb_build_array(
     jsonb_build_object('id', '128gb', 'title', '128 GB'),
     jsonb_build_object('id', '256gb', 'title', '256 GB'),
     jsonb_build_object('id', '512gb', 'title', '512 GB')
   ),
-  'typeOptions', jsonb_build_array(
+  'optionsGroup2', jsonb_build_array(
     jsonb_build_object('id', 'active', 'title', 'Active'),
     jsonb_build_object('id', 'inactive', 'title', 'Inactive')
   ),
-  'simOptions', jsonb_build_array(
+  'optionsGroup3', jsonb_build_array(
     jsonb_build_object('id', 'dual', 'title', 'Dual'),
     jsonb_build_object('id', 'e-sim', 'title', 'E Sim')
   ),
@@ -100,12 +100,12 @@ set details = jsonb_build_object(
   'highlights', jsonb_build_array('Free delivery available', 'Desktop setup assistance included'),
   'specificationSummary', 'All-in-one desktop computer with premium display quality and balanced performance.',
   'careInstructions', 'Keep vents unobstructed and clean screen surface with approved display-safe materials.',
-  'storageOptions', jsonb_build_array(
+  'optionsGroup1', jsonb_build_array(
     jsonb_build_object('id', '256gb', 'title', '256 GB'),
     jsonb_build_object('id', '512gb', 'title', '512 GB')
   ),
-  'typeOptions', jsonb_build_array(jsonb_build_object('id', 'desktop', 'title', 'Desktop')),
-  'simOptions', '[]'::jsonb,
+  'optionsGroup2', jsonb_build_array(jsonb_build_object('id', 'desktop', 'title', 'Desktop')),
+  'optionsGroup3', '[]'::jsonb,
   'additionalInformation', jsonb_build_array(
     jsonb_build_object('label', 'Brand', 'value', 'Apple'),
     jsonb_build_object('label', 'Model', 'value', 'iMac M1 24-inch 2021'),
@@ -129,12 +129,12 @@ set details = jsonb_build_object(
   'highlights', jsonb_build_array('Lightweight everyday laptop', 'Long battery life'),
   'specificationSummary', 'Portable notebook designed for efficient daily workflows and travel-ready performance.',
   'careInstructions', 'Use a padded sleeve during travel and avoid pressure on the display lid.',
-  'storageOptions', jsonb_build_array(
+  'optionsGroup1', jsonb_build_array(
     jsonb_build_object('id', '256gb', 'title', '256 GB'),
     jsonb_build_object('id', '512gb', 'title', '512 GB')
   ),
-  'typeOptions', jsonb_build_array(jsonb_build_object('id', 'notebook', 'title', 'Notebook')),
-  'simOptions', '[]'::jsonb,
+  'optionsGroup2', jsonb_build_array(jsonb_build_object('id', 'notebook', 'title', 'Notebook')),
+  'optionsGroup3', '[]'::jsonb,
   'additionalInformation', jsonb_build_array(
     jsonb_build_object('label', 'Brand', 'value', 'Apple'),
     jsonb_build_object('label', 'Model', 'value', 'MacBook Air M1'),
@@ -158,9 +158,9 @@ set details = jsonb_build_object(
   'highlights', jsonb_build_array('Rugged design', 'Fast shipping available'),
   'specificationSummary', 'Performance-focused wearable with premium materials and advanced activity tracking.',
   'careInstructions', 'Clean sensors regularly and charge with approved accessories only.',
-  'storageOptions', '[]'::jsonb,
-  'typeOptions', jsonb_build_array(jsonb_build_object('id', 'gps-cellular', 'title', 'GPS + Cellular')),
-  'simOptions', '[]'::jsonb,
+  'optionsGroup1', '[]'::jsonb,
+  'optionsGroup2', jsonb_build_array(jsonb_build_object('id', 'gps-cellular', 'title', 'GPS + Cellular')),
+  'optionsGroup3', '[]'::jsonb,
   'additionalInformation', jsonb_build_array(
     jsonb_build_object('label', 'Brand', 'value', 'Apple'),
     jsonb_build_object('label', 'Model', 'value', 'Watch Ultra'),
@@ -184,9 +184,9 @@ set details = jsonb_build_object(
   'highlights', jsonb_build_array('Ergonomic design', 'Free delivery available'),
   'specificationSummary', 'Advanced wireless mouse optimized for precision, comfort, and multitasking workflows.',
   'careInstructions', 'Keep sensor area clean and charge periodically for best battery performance.',
-  'storageOptions', '[]'::jsonb,
-  'typeOptions', jsonb_build_array(jsonb_build_object('id', 'wireless', 'title', 'Wireless')),
-  'simOptions', '[]'::jsonb,
+  'optionsGroup1', '[]'::jsonb,
+  'optionsGroup2', jsonb_build_array(jsonb_build_object('id', 'wireless', 'title', 'Wireless')),
+  'optionsGroup3', '[]'::jsonb,
   'additionalInformation', jsonb_build_array(
     jsonb_build_object('label', 'Brand', 'value', 'Logitech'),
     jsonb_build_object('label', 'Model', 'value', 'MX Master 3'),
@@ -210,12 +210,12 @@ set details = jsonb_build_object(
   'highlights', jsonb_build_array('Lightweight body', 'Free delivery available'),
   'specificationSummary', 'Versatile tablet suited for media consumption, note taking, and light productivity.',
   'careInstructions', 'Use a screen protector and avoid exposing the device to moisture.',
-  'storageOptions', jsonb_build_array(
+  'optionsGroup1', jsonb_build_array(
     jsonb_build_object('id', '64gb', 'title', '64 GB'),
     jsonb_build_object('id', '256gb', 'title', '256 GB')
   ),
-  'typeOptions', jsonb_build_array(jsonb_build_object('id', 'wifi', 'title', 'Wi‑Fi')),
-  'simOptions', '[]'::jsonb,
+  'optionsGroup2', jsonb_build_array(jsonb_build_object('id', 'wifi', 'title', 'Wi‑Fi')),
+  'optionsGroup3', '[]'::jsonb,
   'additionalInformation', jsonb_build_array(
     jsonb_build_object('label', 'Brand', 'value', 'Apple'),
     jsonb_build_object('label', 'Model', 'value', 'iPad Air 5th Gen'),
@@ -239,9 +239,9 @@ set details = jsonb_build_object(
   'highlights', jsonb_build_array('Dual-band coverage', 'Fast shipping available'),
   'specificationSummary', 'Reliable networking hardware with practical coverage for everyday home connectivity.',
   'careInstructions', 'Place in a ventilated area and avoid blocking external antennas.',
-  'storageOptions', '[]'::jsonb,
-  'typeOptions', jsonb_build_array(jsonb_build_object('id', 'router', 'title', 'Router')),
-  'simOptions', '[]'::jsonb,
+  'optionsGroup1', '[]'::jsonb,
+  'optionsGroup2', jsonb_build_array(jsonb_build_object('id', 'router', 'title', 'Router')),
+  'optionsGroup3', '[]'::jsonb,
   'additionalInformation', jsonb_build_array(
     jsonb_build_object('label', 'Brand', 'value', 'Asus'),
     jsonb_build_object('label', 'Model', 'value', 'RT Dual Band Router'),

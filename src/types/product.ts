@@ -28,9 +28,9 @@ export type Product = {
   specificationSummary: string;
   careInstructions: string;
   additionalInformation: ProductInfoRow[];
-  storageOptions: ProductOption[];
-  typeOptions: ProductOption[];
-  simOptions: ProductOption[];
+  optionsGroup1: ProductOption[];
+  optionsGroup2: ProductOption[];
+  optionsGroup3: ProductOption[];
   imgs: {
     thumbnails: string[];
     previews: string[];
@@ -57,9 +57,9 @@ export const emptyProduct: Product = {
   specificationSummary: "",
   careInstructions: "",
   additionalInformation: [],
-  storageOptions: [],
-  typeOptions: [],
-  simOptions: [],
+  optionsGroup1: [],
+  optionsGroup2: [],
+  optionsGroup3: [],
   imgs: {
     thumbnails: [],
     previews: [],
