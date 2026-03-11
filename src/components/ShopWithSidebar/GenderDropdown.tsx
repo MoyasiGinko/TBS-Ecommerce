@@ -1,14 +1,31 @@
 "use client";
 import React, { useState } from "react";
 
-const GenderItem = ({ category }) => {
-  const [selected, setSelected] = useState(false);
+type GenderStat = {
+  name: string;
+  products: number;
+};
+
+type GenderItemProps = {
+  gender: GenderStat;
+  selected: boolean;
+  onClick: () => void;
+};
+
+type GenderDropdownProps = {
+  genders: GenderStat[];
+  selectedGender: string;
+  onGenderChange: (value: string) => void;
+};
+
+const GenderItem = ({ gender, selected, onClick }: GenderItemProps) => {
   return (
     <button
+      type="button"
       className={`${
         selected && "text-blue"
       } group flex items-center justify-between ease-out duration-200 hover:text-blue `}
-      onClick={() => setSelected(!selected)}
+      onClick={onClick}
     >
       <div className="flex items-center gap-2">
         <div
@@ -34,7 +51,7 @@ const GenderItem = ({ category }) => {
           </svg>
         </div>
 
-        <span>{category.name}</span>
+        <span>{gender.name}</span>
       </div>
 
       <span
@@ -42,13 +59,17 @@ const GenderItem = ({ category }) => {
           selected ? "text-white bg-blue" : "bg-gray-2"
         } inline-flex rounded-[30px] text-custom-xs px-2 ease-out duration-200 group-hover:text-white group-hover:bg-blue`}
       >
-        {category.products}
+        {gender.products}
       </span>
     </button>
   );
 };
 
-const GenderDropdown = ({ genders }) => {
+const GenderDropdown = ({
+  genders,
+  selectedGender,
+  onGenderChange,
+}: GenderDropdownProps) => {
   const [toggleDropdown, setToggleDropdown] = useState(true);
 
   return (
@@ -61,7 +82,7 @@ const GenderDropdown = ({ genders }) => {
       >
         <p className="text-dark">Gender</p>
         <button
-          onClick={() => setToggleDropdown(!toggleDropdown)}
+          type="button"
           aria-label="button for gender dropdown"
           className={`text-dark ease-out duration-200 ${
             toggleDropdown && "rotate-180"
@@ -92,7 +113,14 @@ const GenderDropdown = ({ genders }) => {
         }`}
       >
         {genders.map((gender, key) => (
-          <GenderItem key={key} category={gender} />
+          <GenderItem
+            key={key}
+            gender={gender}
+            selected={selectedGender === gender.name}
+            onClick={() =>
+              onGenderChange(selectedGender === gender.name ? "" : gender.name)
+            }
+          />
         ))}
       </div>
     </div>

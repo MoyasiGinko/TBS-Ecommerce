@@ -1,11 +1,19 @@
 "use client";
 import React, { useState } from "react";
 
-const ColorsDropdwon = () => {
-  const [toggleDropdown, setToggleDropdown] = useState(true);
-  const [activeColor, setActiveColor] = useState("blue");
+type ColorsDropdwonProps = {
+  colors: string[];
+  selectedColor: string;
+  onColorChange: (value: string) => void;
+};
 
-  const colors = ["red", "blue", "orange", "pink", "purple"];
+const ColorsDropdwon = ({
+  colors,
+  selectedColor,
+  onColorChange,
+}: ColorsDropdwonProps) => {
+  const [toggleDropdown, setToggleDropdown] = useState(true);
+  const normalizedColors = colors.length ? colors : ["#3C50E0"];
 
   return (
     <div className="bg-white shadow-1 rounded-lg">
@@ -46,23 +54,26 @@ const ColorsDropdwon = () => {
           toggleDropdown ? "flex" : "hidden"
         }`}
       >
-        {colors.map((color, key) => (
+        {normalizedColors.map((color, key) => (
           <label
             key={key}
-            htmlFor={color}
+            htmlFor={`color-${key}`}
             className="cursor-pointer select-none flex items-center"
           >
             <div className="relative">
               <input
                 type="radio"
                 name="color"
-                id={color}
+                id={`color-${key}`}
                 className="sr-only"
-                onChange={() => setActiveColor(color)}
+                checked={selectedColor === color}
+                onChange={() =>
+                  onColorChange(selectedColor === color ? "" : color)
+                }
               />
               <div
                 className={`flex items-center justify-center w-5.5 h-5.5 rounded-full ${
-                  activeColor === color && "border"
+                  selectedColor === color && "border"
                 }`}
                 style={{ borderColor: `${color}` }}
               >

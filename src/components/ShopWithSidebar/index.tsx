@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import CustomSelect from "./CustomSelect";
 import CategoryDropdown from "./CategoryDropdown";
@@ -19,6 +19,11 @@ const ShopWithSidebar = () => {
   const [stickyMenu, setStickyMenu] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedSort, setSelectedSort] = useState("0");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedGender, setSelectedGender] = useState<string>("");
+  const [selectedSize, setSelectedSize] = useState<string>("");
+  const [selectedColor, setSelectedColor] = useState<string>("");
 
   const handleStickyMenu = () => {
     if (window.scrollY >= 80) {
@@ -34,53 +39,166 @@ const ShopWithSidebar = () => {
     { label: "Old Products", value: "2" },
   ];
 
-  const categories = [
-    {
-      name: "Desktop",
-      products: 10,
-      isRefined: true,
-    },
-    {
-      name: "Laptop",
-      products: 12,
-      isRefined: false,
-    },
-    {
-      name: "Monitor",
-      products: 30,
-      isRefined: false,
-    },
-    {
-      name: "UPS",
-      products: 23,
-      isRefined: false,
-    },
-    {
-      name: "Phone",
-      products: 10,
-      isRefined: false,
-    },
-    {
-      name: "Watch",
-      products: 13,
-      isRefined: false,
-    },
-  ];
+  const categories = useMemo(() => {
+    const map = new Map<string, number>();
+    products.forEach((item) => {
+      const key = (item.category || "Uncategorized").trim();
+      map.set(key, (map.get(key) || 0) + 1);
+    });
 
-  const genders = [
-    {
-      name: "Men",
-      products: 10,
-    },
-    {
-      name: "Women",
-      products: 23,
-    },
-    {
-      name: "Unisex",
-      products: 8,
-    },
-  ];
+    return Array.from(map.entries()).map(([name, total], index) => ({
+      name,
+      products: total,
+      isRefined: index === 0,
+    }));
+  }, [products]);
+
+  const genders = useMemo(() => {
+    const map = new Map<string, number>();
+
+    products.forEach((item) => {
+      const source =
+        `${item.title} ${item.shortDescription} ${item.category}`.toLowerCase();
+      let key = "Unisex";
+      if (
+        source.includes("women") ||
+        source.includes("female") ||
+        source.includes("girl")
+      ) {
+        key = "Women";
+      } else if (
+        source.includes("men") ||
+        source.includes("male") ||
+        source.includes("boy")
+      ) {
+        key = "Men";
+      }
+
+      map.set(key, (map.get(key) || 0) + 1);
+    });
+
+    return ["Men", "Women", "Unisex"]
+      .filter((name) => map.has(name))
+      .map((name) => ({ name, products: map.get(name) || 0 }));
+  }, [products]);
+
+  const sizeOptions = useMemo(() => {
+    const set = new Set<string>();
+
+    products.forEach((item) => {
+      item.storageOptions.forEach((opt) => set.add(opt.title));
+      item.typeOptions.forEach((opt) => set.add(opt.title));
+      item.simOptions.forEach((opt) => set.add(opt.title));
+    });
+
+    return Array.from(set);
+  }, [products]);
+
+  const colorOptions = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((item) => {
+      item.colors.forEach((color) => set.add(color));
+    });
+
+    return Array.from(set);
+  }, [products]);
+
+  const priceRange = useMemo(() => {
+    if (!products.length) return { min: 0, max: 100 };
+
+    const prices = products.map((item) =>
+      Number(item.discountedPrice || item.price || 0),
+    );
+    return {
+      min: Math.floor(Math.min(...prices)),
+      max: Math.ceil(Math.max(...prices)),
+    };
+  }, [products]);
+
+  const [selectedPriceRange, setSelectedPriceRange] = useState({
+    from: priceRange.min,
+    to: priceRange.max,
+  });
+
+  useEffect(() => {
+    setSelectedPriceRange({ from: priceRange.min, to: priceRange.max });
+  }, [priceRange.min, priceRange.max]);
+
+  const getGenderFromProduct = (item: Product) => {
+    const source =
+      `${item.title} ${item.shortDescription} ${item.category}`.toLowerCase();
+    if (
+      source.includes("women") ||
+      source.includes("female") ||
+      source.includes("girl")
+    ) {
+      return "Women";
+    }
+    if (
+      source.includes("men") ||
+      source.includes("male") ||
+      source.includes("boy")
+    ) {
+      return "Men";
+    }
+    return "Unisex";
+  };
+
+  const filteredProducts = useMemo(() => {
+    const next = products.filter((item) => {
+      const itemPrice = Number(item.discountedPrice || item.price || 0);
+      const matchesCategory =
+        !selectedCategory ||
+        (item.category || "Uncategorized").trim() === selectedCategory;
+      const matchesGender =
+        !selectedGender || getGenderFromProduct(item) === selectedGender;
+      const matchesSize =
+        !selectedSize ||
+        item.storageOptions.some((opt) => opt.title === selectedSize) ||
+        item.typeOptions.some((opt) => opt.title === selectedSize) ||
+        item.simOptions.some((opt) => opt.title === selectedSize);
+      const matchesColor =
+        !selectedColor || item.colors.includes(selectedColor);
+      const matchesPrice =
+        itemPrice >= selectedPriceRange.from &&
+        itemPrice <= selectedPriceRange.to;
+
+      return (
+        matchesCategory &&
+        matchesGender &&
+        matchesSize &&
+        matchesColor &&
+        matchesPrice
+      );
+    });
+
+    if (selectedSort === "1") {
+      return [...next].sort((a, b) => b.reviews - a.reviews);
+    }
+
+    if (selectedSort === "2") {
+      return [...next].sort((a, b) => a.id - b.id);
+    }
+
+    return [...next].sort((a, b) => b.id - a.id);
+  }, [
+    products,
+    selectedCategory,
+    selectedGender,
+    selectedSize,
+    selectedColor,
+    selectedPriceRange.from,
+    selectedPriceRange.to,
+    selectedSort,
+  ]);
+
+  const clearAllFilters = () => {
+    setSelectedCategory("");
+    setSelectedGender("");
+    setSelectedSize("");
+    setSelectedColor("");
+    setSelectedPriceRange({ from: priceRange.min, to: priceRange.max });
+  };
 
   useEffect(() => {
     window.addEventListener("scroll", handleStickyMenu);
@@ -95,9 +213,16 @@ const ShopWithSidebar = () => {
         setIsLoading(false);
       });
 
+    return () => {
+      window.removeEventListener("scroll", handleStickyMenu);
+    };
+  }, []);
+
+  useEffect(() => {
     // closing sidebar while clicking outside
-    function handleClickOutside(event) {
-      if (!event.target.closest(".sidebar-content")) {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".sidebar-content")) {
         setProductSidebar(false);
       }
     }
@@ -166,24 +291,51 @@ const ShopWithSidebar = () => {
                   <div className="bg-white shadow-1 rounded-lg py-4 px-5">
                     <div className="flex items-center justify-between">
                       <p>Filters:</p>
-                      <button className="text-blue">Clean All</button>
+                      <button
+                        type="button"
+                        onClick={clearAllFilters}
+                        className="text-blue"
+                      >
+                        Clean All
+                      </button>
                     </div>
                   </div>
 
                   {/* <!-- category box --> */}
-                  <CategoryDropdown categories={categories} />
+                  <CategoryDropdown
+                    categories={categories}
+                    selectedCategory={selectedCategory}
+                    onCategoryChange={setSelectedCategory}
+                  />
 
                   {/* <!-- gender box --> */}
-                  <GenderDropdown genders={genders} />
+                  <GenderDropdown
+                    genders={genders}
+                    selectedGender={selectedGender}
+                    onGenderChange={setSelectedGender}
+                  />
 
                   {/* // <!-- size box --> */}
-                  <SizeDropdown />
+                  <SizeDropdown
+                    sizes={sizeOptions}
+                    selectedSize={selectedSize}
+                    onSizeChange={setSelectedSize}
+                  />
 
                   {/* // <!-- color box --> */}
-                  <ColorsDropdwon />
+                  <ColorsDropdwon
+                    colors={colorOptions}
+                    selectedColor={selectedColor}
+                    onColorChange={setSelectedColor}
+                  />
 
                   {/* // <!-- price range box --> */}
-                  <PriceDropdown />
+                  <PriceDropdown
+                    min={priceRange.min}
+                    max={priceRange.max}
+                    value={selectedPriceRange}
+                    onChange={setSelectedPriceRange}
+                  />
                 </div>
               </form>
             </div>
@@ -195,11 +347,17 @@ const ShopWithSidebar = () => {
                 <div className="flex items-center justify-between">
                   {/* <!-- top bar left --> */}
                   <div className="flex flex-wrap items-center gap-4">
-                    <CustomSelect options={options} />
+                    <CustomSelect
+                      options={options}
+                      value={selectedSort}
+                      onChange={(option) => setSelectedSort(option.value)}
+                    />
 
                     <p>
                       Showing{" "}
-                      <span className="text-dark">{products.length}</span>{" "}
+                      <span className="text-dark">
+                        {filteredProducts.length}
+                      </span>{" "}
                       Products
                     </p>
                   </div>
@@ -296,7 +454,7 @@ const ShopWithSidebar = () => {
                 {isLoading ? (
                   <SkeletonLoader count={6} type="product-card" />
                 ) : (
-                  products.map((item, key) =>
+                  filteredProducts.map((item, key) =>
                     productStyle === "grid" ? (
                       <SingleGridItem item={item} key={key} />
                     ) : (

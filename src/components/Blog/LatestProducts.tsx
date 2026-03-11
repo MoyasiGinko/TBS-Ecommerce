@@ -16,10 +16,15 @@ const LatestProducts = ({ products }) => {
             <div className="flex items-center gap-6" key={key}>
               <div className="flex items-center justify-center rounded-[10px] bg-gray-3 max-w-[90px] w-full h-22.5">
                 <Image
-                  src={product.imgs?.thumbnails?.[0]}
-                  alt="product"
+                  src={
+                    product.imgs?.thumbnails?.[0] ||
+                    product.imgs?.previews?.[0] ||
+                    "/images/products/product-1-bg-1.png"
+                  }
+                  alt={product.title}
                   width={74}
                   height={74}
+                  className="h-16 w-16 object-contain"
                 />
               </div>
 
