@@ -1,14 +1,15 @@
 import React from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import BlogItem from "../Blog/BlogItem";
-import blogData from "../BlogGrid/blogData"; 
-import SearchForm from "../Blog/SearchForm"; 
+import SearchForm from "../Blog/SearchForm";
 import LatestPosts from "../Blog/LatestPosts";
 import LatestProducts from "../Blog/LatestProducts";
 import Categories from "../Blog/Categories";
-import shopData from "../Shop/shopData"; 
- 
-const BlogGridWithSidebar = () => {
+import { getBlogs, getProducts } from "@/lib/data/store";
+
+const BlogGridWithSidebar = async () => {
+  const [blogs, products] = await Promise.all([getBlogs(), getProducts()]);
+
   const categories = [
     {
       name: "Desktop",
@@ -46,7 +47,7 @@ const BlogGridWithSidebar = () => {
             {/* <!-- blog grid --> */}
             <div className="lg:max-w-[770px] w-full">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-10 gap-x-7.5">
-                {blogData.map((blog, key) => (
+                {blogs.map((blog, key) => (
                   <BlogItem blog={blog} key={key} />
                 ))}
               </div>
@@ -176,10 +177,10 @@ const BlogGridWithSidebar = () => {
               <SearchForm />
 
               {/* <!-- Recent Posts box --> */}
-              <LatestPosts blogs={blogData} />
+              <LatestPosts blogs={blogs} />
 
               {/* <!-- Latest Products box --> */}
-              <LatestProducts products={shopData} />
+              <LatestProducts products={products} />
 
               {/* <!-- Popular Category box --> */}
               <Categories categories={categories} />

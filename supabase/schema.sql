@@ -1,0 +1,235 @@
+create extension if not exists pgcrypto;
+
+create table if not exists public.categories (
+  id bigint generated always as identity primary key,
+  title text not null,
+  img text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.products (
+  id bigint generated always as identity primary key,
+  title text not null,
+  reviews int not null default 0,
+  price numeric(10,2) not null,
+  discounted_price numeric(10,2) not null,
+  thumbnails text[] not null default '{}',
+  previews text[] not null default '{}',
+  category_id bigint references public.categories(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.blogs (
+  id bigint generated always as identity primary key,
+  title text not null,
+  date text not null,
+  views int not null default 0,
+  img text not null,
+  content text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.testimonials (
+  id bigint generated always as identity primary key,
+  review text not null,
+  author_name text not null,
+  author_role text not null,
+  author_img text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text not null,
+  full_name text not null,
+  role text not null default 'customer' check (role in ('admin', 'manager', 'customer')),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.orders (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  order_id text not null,
+  created_at timestamptz not null default now(),
+  created_at_label text not null,
+  status text not null check (status in ('processing', 'delivered', 'on-hold')),
+  total text not null,
+  title text not null
+);
+
+create or replace function public.handle_new_user_profile()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, email, full_name, role)
+  values (
+    new.id,
+    coalesce(new.email, ''),
+    coalesce(new.raw_user_meta_data ->> 'full_name', ''),
+    'customer'
+  )
+  on conflict (id) do nothing;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute procedure public.handle_new_user_profile();
+
+alter table public.categories enable row level security;
+alter table public.products enable row level security;
+alter table public.blogs enable row level security;
+alter table public.testimonials enable row level security;
+alter table public.profiles enable row level security;
+alter table public.orders enable row level security;
+
+drop policy if exists "Public read categories" on public.categories;
+create policy "Public read categories"
+on public.categories for select using (true);
+
+drop policy if exists "Public read products" on public.products;
+create policy "Public read products"
+on public.products for select using (true);
+
+drop policy if exists "Public read blogs" on public.blogs;
+create policy "Public read blogs"
+on public.blogs for select using (true);
+
+drop policy if exists "Public read testimonials" on public.testimonials;
+create policy "Public read testimonials"
+on public.testimonials for select using (true);
+
+drop policy if exists "User can read own profile" on public.profiles;
+create policy "User can read own profile"
+on public.profiles for select
+using (auth.uid() = id);
+
+drop policy if exists "User can update own profile" on public.profiles;
+create policy "User can update own profile"
+on public.profiles for update
+using (auth.uid() = id)
+with check (auth.uid() = id);
+
+drop policy if exists "User can read own orders" on public.orders;
+create policy "User can read own orders"
+on public.orders for select
+using (auth.uid() = user_id);
+
+drop policy if exists "User can create own orders" on public.orders;
+create policy "User can create own orders"
+on public.orders for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists "Admins manage categories" on public.categories;
+create policy "Admins manage categories"
+on public.categories for all
+using (
+  exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid() and p.role in ('admin', 'manager')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid() and p.role in ('admin', 'manager')
+  )
+);
+
+drop policy if exists "Admins manage products" on public.products;
+create policy "Admins manage products"
+on public.products for all
+using (
+  exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid() and p.role in ('admin', 'manager')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid() and p.role in ('admin', 'manager')
+  )
+);
+
+drop policy if exists "Admins manage blogs" on public.blogs;
+create policy "Admins manage blogs"
+on public.blogs for all
+using (
+  exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid() and p.role in ('admin', 'manager')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid() and p.role in ('admin', 'manager')
+  )
+);
+
+drop policy if exists "Admins manage testimonials" on public.testimonials;
+create policy "Admins manage testimonials"
+on public.testimonials for all
+using (
+  exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid() and p.role in ('admin', 'manager')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid() and p.role in ('admin', 'manager')
+  )
+);
+
+drop policy if exists "Admins manage profiles" on public.profiles;
+create policy "Admins manage profiles"
+on public.profiles for all
+using (
+  exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid() and p.role in ('admin', 'manager')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid() and p.role in ('admin', 'manager')
+  )
+);
+
+drop policy if exists "Admins manage orders" on public.orders;
+create policy "Admins manage orders"
+on public.orders for all
+using (
+  exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid() and p.role in ('admin', 'manager')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid() and p.role in ('admin', 'manager')
+  )
+);

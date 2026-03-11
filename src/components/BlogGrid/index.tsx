@@ -1,9 +1,11 @@
 import React from "react";
 import Breadcrumb from "../Common/Breadcrumb";
-import blogData from "./blogData";
 import BlogItem from "../Blog/BlogItem";
+import { getBlogs } from "@/lib/data/store";
 
-const BlogGrid = () => {
+const BlogGrid = async () => {
+  const blogs = await getBlogs();
+
   return (
     <>
       <Breadcrumb title={"Blog Grid"} pages={["blog grid"]} />{" "}
@@ -11,7 +13,7 @@ const BlogGrid = () => {
         <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-7.5">
             {/* <!-- blog item --> */}
-            {blogData.map((blog, key) => (
+            {blogs.map((blog, key) => (
               <BlogItem blog={blog} key={key} />
             ))}
           </div>
@@ -134,7 +136,7 @@ const BlogGrid = () => {
           </div>
           {/* <!-- Blog Pagination End --> */}
         </div>
-      </section> 
+      </section>
     </>
   );
 };

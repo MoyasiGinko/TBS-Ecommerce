@@ -1,15 +1,25 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
 import CustomSelect from "../ShopWithSidebar/CustomSelect";
-
-import shopData from "../Shop/shopData";
+import { Product } from "@/types/product";
+import { fallbackProducts } from "@/lib/data/fallback";
+import { getProductsClient } from "@/lib/data/store";
 
 const ShopWithoutSidebar = () => {
   const [productStyle, setProductStyle] = useState("grid");
+  const [products, setProducts] = useState<Product[]>(fallbackProducts);
+
+  useEffect(() => {
+    getProductsClient()
+      .then(setProducts)
+      .catch(() => {
+        setProducts(fallbackProducts);
+      });
+  }, []);
 
   const options = [
     { label: "Latest Products", value: "0" },
@@ -129,12 +139,12 @@ const ShopWithoutSidebar = () => {
                     : "flex flex-col gap-7.5"
                 }`}
               >
-                {shopData.map((item, key) =>
+                {products.map((item, key) =>
                   productStyle === "grid" ? (
                     <SingleGridItem item={item} key={key} />
                   ) : (
                     <SingleListItem item={item} key={key} />
-                  )
+                  ),
                 )}
               </div>
               {/* <!-- Products Grid Tab Content End --> */}

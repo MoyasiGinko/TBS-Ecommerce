@@ -1,8 +1,10 @@
 "use client";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { useCallback, useRef, useEffect } from "react";
-import data from "./categoryData";
+import { useCallback, useRef, useEffect, useState } from "react";
 import Image from "next/image";
+import { Category } from "@/types/category";
+import { fallbackCategories } from "@/lib/data/fallback";
+import { getCategoriesClient } from "@/lib/data/store";
 
 // Import Swiper styles
 import "swiper/css/navigation";
@@ -11,6 +13,7 @@ import SingleItem from "./SingleItem";
 
 const Categories = () => {
   const sliderRef = useRef(null);
+  const [categories, setCategories] = useState<Category[]>(fallbackCategories);
 
   const handlePrev = useCallback(() => {
     if (!sliderRef.current) return;
@@ -26,6 +29,12 @@ const Categories = () => {
     if (sliderRef.current) {
       sliderRef.current.swiper.init();
     }
+
+    getCategoriesClient()
+      .then(setCategories)
+      .catch(() => {
+        setCategories(fallbackCategories);
+      });
   }, []);
 
   return (
@@ -134,7 +143,7 @@ const Categories = () => {
               },
             }}
           >
-            {data.map((item, key) => (
+            {categories.map((item, key) => (
               <SwiperSlide key={key}>
                 <SingleItem item={item} />
               </SwiperSlide>

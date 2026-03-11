@@ -38,10 +38,10 @@ const SingleOrder = ({ orderItem, smallView }: any) => {
                 orderItem.status === "delivered"
                   ? "text-green bg-green-light-6"
                   : orderItem.status === "on-hold"
-                  ? "text-red bg-red-light-6"
-                  : orderItem.status === "processing"
-                  ? "text-yellow bg-yellow-light-4"
-                  : "Unknown Status"
+                    ? "text-red bg-red-light-6"
+                    : orderItem.status === "processing"
+                      ? "text-yellow bg-yellow-light-4"
+                      : "Unknown Status"
               }`}
             >
               {orderItem.status}
@@ -85,14 +85,12 @@ const SingleOrder = ({ orderItem, smallView }: any) => {
               <p className="text-custom-sm text-dark">
                 <span className="font-bold pr-2">Status:</span>{" "}
                 <span
-                  className={`inline-block text-custom-sm  py-0.5 px-2.5 rounded-[30px] capitalize ${
+                  className={`inline-block text-custom-sm py-0.5 px-2.5 rounded-[30px] capitalize ${
                     orderItem.status === "delivered"
                       ? "text-green bg-green-light-6"
                       : orderItem.status === "on-hold"
-                      ? "text-red bg-red-light-6"
-                      : orderItem.status === "processing"
-                      ? "text-yellow bg-yellow-light-4"
-                      : "Unknown Status"
+                        ? "text-red bg-red-light-6"
+                        : "text-yellow bg-yellow-light-4"
                   }`}
                 >
                   {orderItem.status}
