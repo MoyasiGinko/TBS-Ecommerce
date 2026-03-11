@@ -5,6 +5,7 @@ import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { updateQuickView } from "@/redux/features/quickView-slice";
 import { addItemToCart } from "@/redux/features/cart-slice";
 import { addItemToWishlist } from "@/redux/features/wishlist-slice";
+import { updateproductDetails } from "@/redux/features/product-details";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import Link from "next/link";
@@ -26,7 +27,7 @@ const SingleGridItem = ({ item }: { item: Product }) => {
       addItemToCart({
         ...item,
         quantity: 1,
-      })
+      }),
     );
   };
 
@@ -36,8 +37,12 @@ const SingleGridItem = ({ item }: { item: Product }) => {
         ...item,
         status: "available",
         quantity: 1,
-      })
+      }),
     );
+  };
+
+  const handleProductDetails = () => {
+    dispatch(updateproductDetails({ ...item }));
   };
 
   return (
@@ -148,7 +153,12 @@ const SingleGridItem = ({ item }: { item: Product }) => {
       </div>
 
       <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5">
-        <Link href="/shop-details"> {item.title} </Link>
+        <Link
+          href={`/shop-details?id=${item.id}`}
+          onClick={handleProductDetails}
+        >
+          {item.title}
+        </Link>
       </h3>
 
       <span className="flex items-center gap-2 font-medium text-lg">

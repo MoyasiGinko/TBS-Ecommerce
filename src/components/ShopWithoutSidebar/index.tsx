@@ -45,7 +45,8 @@ const ShopWithoutSidebar = () => {
                     <CustomSelect options={options} />
 
                     <p>
-                      Showing <span className="text-dark">9 of 50</span>{" "}
+                      Showing{" "}
+                      <span className="text-dark">{products.length}</span>{" "}
                       Products
                     </p>
                   </div>

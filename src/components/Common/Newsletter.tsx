@@ -1,12 +1,40 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import { getSiteContentMapClient } from "@/lib/data/siteContent";
+
+type NewsletterContent = {
+  title?: string;
+  description?: string;
+  buttonLabel?: string;
+};
+
+const defaultContent: NewsletterContent = {
+  title: "Don't Miss Out Latest Trends & Offers",
+  description: "Register to receive news about the latest offers & discount codes",
+  buttonLabel: "Subscribe",
+};
 
 const Newsletter = () => {
+  const [content, setContent] = useState<NewsletterContent>(defaultContent);
+
+  useEffect(() => {
+    const loadContent = async () => {
+      const contentMap = await getSiteContentMapClient();
+      const managed = contentMap["common.newsletter"];
+      if (managed) {
+        setContent({ ...defaultContent, ...managed });
+      }
+    };
+
+    loadContent();
+  }, []);
+
   return (
     <section className="overflow-hidden">
       <div className="max-w-[1170px] mx-auto px-4 sm:px-8 xl:px-0">
         <div className="relative z-1 overflow-hidden rounded-xl">
-          {/* <!-- bg shapes --> */}
           <Image
             src="/images/shapes/newsletter-bg.jpg"
             alt="background illustration"
@@ -19,12 +47,9 @@ const Newsletter = () => {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 px-4 sm:px-7.5 xl:pl-12.5 xl:pr-14 py-11">
             <div className="max-w-[491px] w-full">
               <h2 className="max-w-[399px] text-white font-bold text-lg sm:text-xl xl:text-heading-4 mb-3">
-                Don&apos;t Miss Out Latest Trends & Offers
+                {content.title}
               </h2>
-              <p className="text-white">
-                Register to receive news about the latest offers & discount
-                codes
-              </p>
+              <p className="text-white">{content.description}</p>
             </div>
 
             <div className="max-w-[477px] w-full">
@@ -41,7 +66,7 @@ const Newsletter = () => {
                     type="submit"
                     className="inline-flex justify-center py-3 px-7 text-white bg-blue font-medium rounded-md ease-out duration-200 hover:bg-blue-dark"
                   >
-                    Subscribe
+                    {content.buttonLabel}
                   </button>
                 </div>
               </form>

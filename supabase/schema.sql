@@ -15,9 +15,13 @@ create table if not exists public.products (
   discounted_price numeric(10,2) not null,
   thumbnails text[] not null default '{}',
   previews text[] not null default '{}',
+  details jsonb not null default '{}'::jsonb,
   category_id bigint references public.categories(id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+alter table if exists public.products
+  add column if not exists details jsonb not null default '{}'::jsonb;
 
 create table if not exists public.blogs (
   id bigint generated always as identity primary key,
@@ -36,6 +40,15 @@ create table if not exists public.testimonials (
   author_role text not null,
   author_img text not null,
   created_at timestamptz not null default now()
+);
+
+create table if not exists public.site_content (
+  id bigint generated always as identity primary key,
+  key text not null unique,
+  title text not null,
+  content jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists public.profiles (
@@ -86,6 +99,7 @@ alter table public.categories enable row level security;
 alter table public.products enable row level security;
 alter table public.blogs enable row level security;
 alter table public.testimonials enable row level security;
+alter table public.site_content enable row level security;
 alter table public.profiles enable row level security;
 alter table public.orders enable row level security;
 
@@ -104,6 +118,10 @@ on public.blogs for select using (true);
 drop policy if exists "Public read testimonials" on public.testimonials;
 create policy "Public read testimonials"
 on public.testimonials for select using (true);
+
+drop policy if exists "Public read site content" on public.site_content;
+create policy "Public read site content"
+on public.site_content for select using (true);
 
 drop policy if exists "User can read own profile" on public.profiles;
 create policy "User can read own profile"
@@ -126,110 +144,60 @@ create policy "User can create own orders"
 on public.orders for insert
 with check (auth.uid() = user_id);
 
+-- Helper: reads the current user's role bypassing RLS (security definer) to avoid
+-- infinite recursion when this function is used inside policies on the profiles table.
+drop function if exists public.get_my_profile_role() cascade;
+create or replace function public.get_my_profile_role()
+returns text
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select coalesce(
+    (select role from public.profiles where id = auth.uid()),
+    'customer'
+  )
+$$;
+
 drop policy if exists "Admins manage categories" on public.categories;
 create policy "Admins manage categories"
 on public.categories for all
-using (
-  exists (
-    select 1
-    from public.profiles p
-    where p.id = auth.uid() and p.role in ('admin', 'manager')
-  )
-)
-with check (
-  exists (
-    select 1
-    from public.profiles p
-    where p.id = auth.uid() and p.role in ('admin', 'manager')
-  )
-);
+using (public.get_my_profile_role() in ('admin', 'manager'))
+with check (public.get_my_profile_role() in ('admin', 'manager'));
 
 drop policy if exists "Admins manage products" on public.products;
 create policy "Admins manage products"
 on public.products for all
-using (
-  exists (
-    select 1
-    from public.profiles p
-    where p.id = auth.uid() and p.role in ('admin', 'manager')
-  )
-)
-with check (
-  exists (
-    select 1
-    from public.profiles p
-    where p.id = auth.uid() and p.role in ('admin', 'manager')
-  )
-);
+using (public.get_my_profile_role() in ('admin', 'manager'))
+with check (public.get_my_profile_role() in ('admin', 'manager'));
 
 drop policy if exists "Admins manage blogs" on public.blogs;
 create policy "Admins manage blogs"
 on public.blogs for all
-using (
-  exists (
-    select 1
-    from public.profiles p
-    where p.id = auth.uid() and p.role in ('admin', 'manager')
-  )
-)
-with check (
-  exists (
-    select 1
-    from public.profiles p
-    where p.id = auth.uid() and p.role in ('admin', 'manager')
-  )
-);
+using (public.get_my_profile_role() in ('admin', 'manager'))
+with check (public.get_my_profile_role() in ('admin', 'manager'));
 
 drop policy if exists "Admins manage testimonials" on public.testimonials;
 create policy "Admins manage testimonials"
 on public.testimonials for all
-using (
-  exists (
-    select 1
-    from public.profiles p
-    where p.id = auth.uid() and p.role in ('admin', 'manager')
-  )
-)
-with check (
-  exists (
-    select 1
-    from public.profiles p
-    where p.id = auth.uid() and p.role in ('admin', 'manager')
-  )
-);
+using (public.get_my_profile_role() in ('admin', 'manager'))
+with check (public.get_my_profile_role() in ('admin', 'manager'));
+
+drop policy if exists "Admins manage site content" on public.site_content;
+create policy "Admins manage site content"
+on public.site_content for all
+using (public.get_my_profile_role() in ('admin', 'manager'))
+with check (public.get_my_profile_role() in ('admin', 'manager'));
 
 drop policy if exists "Admins manage profiles" on public.profiles;
 create policy "Admins manage profiles"
 on public.profiles for all
-using (
-  exists (
-    select 1
-    from public.profiles p
-    where p.id = auth.uid() and p.role in ('admin', 'manager')
-  )
-)
-with check (
-  exists (
-    select 1
-    from public.profiles p
-    where p.id = auth.uid() and p.role in ('admin', 'manager')
-  )
-);
+using (public.get_my_profile_role() in ('admin', 'manager'))
+with check (public.get_my_profile_role() in ('admin', 'manager'));
 
 drop policy if exists "Admins manage orders" on public.orders;
 create policy "Admins manage orders"
 on public.orders for all
-using (
-  exists (
-    select 1
-    from public.profiles p
-    where p.id = auth.uid() and p.role in ('admin', 'manager')
-  )
-)
-with check (
-  exists (
-    select 1
-    from public.profiles p
-    where p.id = auth.uid() and p.role in ('admin', 'manager')
-  )
-);
+using (public.get_my_profile_role() in ('admin', 'manager'))
+with check (public.get_my_profile_role() in ('admin', 'manager'));

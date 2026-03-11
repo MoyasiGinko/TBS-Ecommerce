@@ -25,10 +25,17 @@ const PreviewSliderModal = () => {
     sliderRef.current.swiper.slideNext();
   }, []);
 
+  const previews = data.imgs?.previews?.length
+    ? data.imgs.previews
+    : data.imgs?.thumbnails?.length
+      ? data.imgs.thumbnails
+      : [];
+
   return (
     <div
-      className={`preview-slider w-full h-screen  z-999999 inset-0 flex justify-center items-center bg-[#000000F2] bg-opacity-70 ${isModalPreviewOpen ? "fixed" : "hidden"
-        }`}
+      className={`preview-slider w-full h-screen  z-999999 inset-0 flex justify-center items-center bg-[#000000F2] bg-opacity-70 ${
+        isModalPreviewOpen ? "fixed" : "hidden"
+      }`}
     >
       <button
         onClick={() => closePreviewModal()}
@@ -95,26 +102,18 @@ const PreviewSliderModal = () => {
       </div>
 
       <Swiper ref={sliderRef} slidesPerView={1} spaceBetween={20}>
-        <SwiperSlide>
-          <div className="flex justify-center items-center">
-            <Image
-              src={"/images/products/product-2-bg-1.png"}
-              alt={"product image"}
-              width={450}
-              height={450}
-            />
-          </div>
-        </SwiperSlide>
-        <SwiperSlide>
-          <div className="flex justify-center items-center">
-            <Image
-              src={"/images/products/product-2-bg-1.png"}
-              alt={"product image"}
-              width={450}
-              height={450}
-            />
-          </div>
-        </SwiperSlide>
+        {previews.map((preview, index) => (
+          <SwiperSlide key={`${data.id}-preview-${index}`}>
+            <div className="flex justify-center items-center">
+              <Image
+                src={preview}
+                alt={data.title || "product image"}
+                width={450}
+                height={450}
+              />
+            </div>
+          </SwiperSlide>
+        ))}
       </Swiper>
     </div>
   );

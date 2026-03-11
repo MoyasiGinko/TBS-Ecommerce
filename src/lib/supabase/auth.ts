@@ -82,11 +82,20 @@ export const getCurrentProfile = async (): Promise<UserProfile | null> => {
 
   if (!user) return null;
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .select("id,email,full_name,role,created_at")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (error) {
+    console.error(
+      "[getCurrentProfile] profiles query error:",
+      error.message,
+      "| code:",
+      error.code,
+    );
+  }
 
   if (!data) {
     return {

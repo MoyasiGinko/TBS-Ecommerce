@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getCurrentProfile, signOutUser } from "@/lib/supabase/auth";
 import { UserProfile } from "@/types/user";
@@ -11,7 +12,8 @@ type AdminTab =
   | "blogs"
   | "testimonials"
   | "orders"
-  | "users";
+  | "users"
+  | "content";
 
 type ProductRow = {
   id: number;
@@ -21,6 +23,7 @@ type ProductRow = {
   discounted_price: number;
   thumbnails: string[];
   previews: string[];
+  details: Record<string, any>;
 };
 
 type CategoryRow = {
@@ -55,6 +58,13 @@ type OrderRow = {
   title: string;
 };
 
+type SiteContentRow = {
+  id: number;
+  key: string;
+  title: string;
+  content: Record<string, any>;
+};
+
 const PAGE_SIZE = 6;
 
 const paginate = <T,>(items: T[], page: number, size = PAGE_SIZE) => {
@@ -83,6 +93,7 @@ const AdminDashboard = () => {
   const [testimonials, setTestimonials] = useState<TestimonialRow[]>([]);
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [siteContents, setSiteContents] = useState<SiteContentRow[]>([]);
 
   const [newProduct, setNewProduct] = useState({
     title: "",
@@ -91,6 +102,29 @@ const AdminDashboard = () => {
     discounted_price: 0,
     thumbnails: "",
     previews: "",
+    details: JSON.stringify(
+      {
+        rating: 4.7,
+        category: "Electronics",
+        shortDescription: "",
+        description: "",
+        availability: "In Stock",
+        badge: "",
+        promoText: "",
+        brand: "",
+        model: "",
+        colors: [],
+        highlights: [],
+        specificationSummary: "",
+        careInstructions: "",
+        storageOptions: [],
+        typeOptions: [],
+        simOptions: [],
+        additionalInformation: [],
+      },
+      null,
+      2,
+    ),
   });
 
   const [newCategory, setNewCategory] = useState({ title: "", img: "" });
@@ -118,6 +152,12 @@ const AdminDashboard = () => {
     title: "",
   });
 
+  const [newContent, setNewContent] = useState({
+    key: "",
+    title: "",
+    content: "{}",
+  });
+
   const [search, setSearch] = useState<Record<AdminTab, string>>({
     products: "",
     categories: "",
@@ -125,6 +165,7 @@ const AdminDashboard = () => {
     testimonials: "",
     orders: "",
     users: "",
+    content: "",
   });
 
   const [page, setPage] = useState<Record<AdminTab, number>>({
@@ -134,6 +175,7 @@ const AdminDashboard = () => {
     testimonials: 1,
     orders: 1,
     users: 1,
+    content: 1,
   });
 
   const [editingId, setEditingId] = useState<string>("");
@@ -144,6 +186,18 @@ const AdminDashboard = () => {
       .split(",")
       .map((v) => v.trim())
       .filter(Boolean);
+
+  const parseJsonObject = (value: string) => {
+    try {
+      const parsed = JSON.parse(value || "{}");
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("JSON must be an object");
+      }
+      return parsed;
+    } catch {
+      throw new Error("Invalid product details JSON");
+    }
+  };
 
   const loadAll = useCallback(async () => {
     if (!supabase) {
@@ -170,10 +224,13 @@ const AdminDashboard = () => {
       testimonialsRes,
       ordersRes,
       usersRes,
+      siteContentRes,
     ] = await Promise.all([
       supabase
         .from("products")
-        .select("id,title,reviews,price,discounted_price,thumbnails,previews")
+        .select(
+          "id,title,reviews,price,discounted_price,thumbnails,previews,details",
+        )
         .order("id"),
       supabase.from("categories").select("id,title,img").order("id"),
       supabase.from("blogs").select("id,title,date,views,img").order("id"),
@@ -189,6 +246,10 @@ const AdminDashboard = () => {
         .from("profiles")
         .select("id,email,full_name,role,created_at")
         .order("created_at", { ascending: false }),
+      supabase
+        .from("site_content")
+        .select("id,key,title,content")
+        .order("key", { ascending: true }),
     ]);
 
     setProducts((productsRes.data || []) as ProductRow[]);
@@ -205,6 +266,7 @@ const AdminDashboard = () => {
         createdAt: u.created_at,
       })),
     );
+    setSiteContents((siteContentRes.data || []) as SiteContentRow[]);
 
     const firstError =
       productsRes.error ||
@@ -212,7 +274,8 @@ const AdminDashboard = () => {
       blogsRes.error ||
       testimonialsRes.error ||
       ordersRes.error ||
-      usersRes.error;
+      usersRes.error ||
+      siteContentRes.error;
 
     setMessage(firstError ? firstError.message : "");
     setIsLoading(false);
@@ -242,7 +305,10 @@ const AdminDashboard = () => {
 
   const startEdit = (id: string, row: any) => {
     setEditingId(id);
-    setEditingDraft(row);
+    setEditingDraft({
+      ...row,
+      detailsText: JSON.stringify(row.details || {}, null, 2),
+    });
   };
 
   const cancelEdit = () => {
@@ -277,6 +343,11 @@ const AdminDashboard = () => {
       .toLowerCase()
       .includes(search.users.toLowerCase()),
   );
+  const filteredContents = siteContents.filter((c) =>
+    (c.key + c.title + JSON.stringify(c.content || {}))
+      .toLowerCase()
+      .includes(search.content.toLowerCase()),
+  );
 
   const productsPg = paginate(filteredProducts, page.products);
   const categoriesPg = paginate(filteredCategories, page.categories);
@@ -284,6 +355,7 @@ const AdminDashboard = () => {
   const testimonialsPg = paginate(filteredTestimonials, page.testimonials);
   const ordersPg = paginate(filteredOrders, page.orders);
   const usersPg = paginate(filteredUsers, page.users);
+  const contentsPg = paginate(filteredContents, page.content);
 
   const renderPager = (tab: AdminTab, totalPages: number) => (
     <div className="mt-4 flex items-center gap-2">
@@ -317,7 +389,26 @@ const AdminDashboard = () => {
     return (
       <div className="rounded-xl bg-white shadow-1 p-6 sm:p-10">
         <h2 className="font-semibold text-xl text-dark mb-3">Access denied</h2>
-        <p>You must be signed in as an admin or manager to access this page.</p>
+        {profile ? (
+          <p className="mb-2">
+            Signed in as <strong>{profile.email}</strong> with role{" "}
+            <strong>{profile.role}</strong>. Admin or manager role is required.
+          </p>
+        ) : (
+          <p className="mb-2">No active session found. Please sign in again.</p>
+        )}
+        <p className="text-sm text-gray-500 mt-2">
+          If your role was recently changed in Supabase, sign out and back in so
+          the session reflects the update. If the problem persists, make sure
+          you have run the latest <code>schema.sql</code> in your Supabase SQL
+          editor — the RLS policies may need to be refreshed.
+        </p>
+        <a
+          href="/signin"
+          className="inline-block mt-4 font-medium text-custom-sm py-2.5 px-5 rounded-md bg-dark text-white hover:bg-blue"
+        >
+          Go to Sign In
+        </a>
       </div>
     );
   }
@@ -349,7 +440,7 @@ const AdminDashboard = () => {
         <p className="text-red text-custom-sm mb-4">{message}</p>
       ) : null}
 
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-7 gap-3 mb-6">
         <div className={headerCard}>
           <p className="text-xs">Products</p>
           <p className="font-semibold text-xl">{products.length}</p>
@@ -374,6 +465,10 @@ const AdminDashboard = () => {
           <p className="text-xs">Users</p>
           <p className="font-semibold text-xl">{users.length}</p>
         </div>
+        <div className={headerCard}>
+          <p className="text-xs">Content</p>
+          <p className="font-semibold text-xl">{siteContents.length}</p>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-6">
@@ -385,6 +480,7 @@ const AdminDashboard = () => {
             ["testimonials", "Testimonials"],
             ["orders", "Orders"],
             ["users", "Users"],
+            ["content", "Content"],
           ] as Array<[AdminTab, string]>
         ).map(([key, label]) => (
           <button
@@ -464,6 +560,14 @@ const AdminDashboard = () => {
                 setNewProduct((v) => ({ ...v, previews: e.target.value }))
               }
             />
+            <textarea
+              className="border rounded p-2 md:col-span-4 min-h-[220px] font-mono text-sm"
+              placeholder="Product details JSON"
+              value={newProduct.details}
+              onChange={(e) =>
+                setNewProduct((v) => ({ ...v, details: e.target.value }))
+              }
+            />
           </div>
           <button
             disabled={isSaving}
@@ -478,6 +582,7 @@ const AdminDashboard = () => {
                   discounted_price: newProduct.discounted_price,
                   thumbnails: toArray(newProduct.thumbnails),
                   previews: toArray(newProduct.previews),
+                  details: parseJsonObject(newProduct.details),
                 });
                 if (error) throw error;
                 setNewProduct({
@@ -487,6 +592,29 @@ const AdminDashboard = () => {
                   discounted_price: 0,
                   thumbnails: "",
                   previews: "",
+                  details: JSON.stringify(
+                    {
+                      rating: 4.7,
+                      category: "Electronics",
+                      shortDescription: "",
+                      description: "",
+                      availability: "In Stock",
+                      badge: "",
+                      promoText: "",
+                      brand: "",
+                      model: "",
+                      colors: [],
+                      highlights: [],
+                      specificationSummary: "",
+                      careInstructions: "",
+                      storageOptions: [],
+                      typeOptions: [],
+                      simOptions: [],
+                      additionalInformation: [],
+                    },
+                    null,
+                    2,
+                  ),
                 });
               })
             }
@@ -541,6 +669,39 @@ const AdminDashboard = () => {
                         }))
                       }
                     />
+                    <input
+                      className="border rounded p-2 md:col-span-2"
+                      placeholder="Thumbnails comma separated"
+                      value={(editingDraft.thumbnails || []).join(", ")}
+                      onChange={(e) =>
+                        setEditingDraft((d) => ({
+                          ...d,
+                          thumbnails: toArray(e.target.value),
+                        }))
+                      }
+                    />
+                    <input
+                      className="border rounded p-2 md:col-span-2"
+                      placeholder="Previews comma separated"
+                      value={(editingDraft.previews || []).join(", ")}
+                      onChange={(e) =>
+                        setEditingDraft((d) => ({
+                          ...d,
+                          previews: toArray(e.target.value),
+                        }))
+                      }
+                    />
+                    <textarea
+                      className="border rounded p-2 md:col-span-4 min-h-[220px] font-mono text-sm"
+                      placeholder="Product details JSON"
+                      value={editingDraft.detailsText || "{}"}
+                      onChange={(e) =>
+                        setEditingDraft((d) => ({
+                          ...d,
+                          detailsText: e.target.value,
+                        }))
+                      }
+                    />
                     <div className="flex gap-2">
                       <button
                         className="px-3 py-1 rounded bg-blue text-white"
@@ -553,6 +714,11 @@ const AdminDashboard = () => {
                                 title: editingDraft.title,
                                 price: editingDraft.price,
                                 discounted_price: editingDraft.discounted_price,
+                                thumbnails: editingDraft.thumbnails || [],
+                                previews: editingDraft.previews || [],
+                                details: parseJsonObject(
+                                  editingDraft.detailsText || "{}",
+                                ),
                               })
                               .eq("id", p.id);
                             if (error) throw error;
@@ -577,6 +743,21 @@ const AdminDashboard = () => {
                       <p className="text-sm">
                         ${p.discounted_price} / ${p.price}
                       </p>
+                      <p className="text-xs text-dark-4 mt-1">
+                        {p.details?.category || "Uncategorized"}
+                      </p>
+                      <div className="mt-2 flex gap-2">
+                        {(p.thumbnails || []).slice(0, 3).map((img, idx) => (
+                          <Image
+                            key={`${p.id}-thumb-${idx}`}
+                            src={img}
+                            alt={p.title}
+                            className="h-10 w-10 rounded border border-gray-3 object-cover"
+                            width={40}
+                            height={40}
+                          />
+                        ))}
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -1353,6 +1534,176 @@ const AdminDashboard = () => {
             ))}
           </div>
           {renderPager("users", usersPg.totalPages)}
+        </div>
+      )}
+
+      {activeTab === "content" && (
+        <div>
+          <h3 className="font-medium text-lg mb-3">
+            Site Content ({siteContents.length})
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+            <input
+              className="border rounded p-2"
+              placeholder="Key (e.g. home.hero_main)"
+              value={newContent.key}
+              onChange={(e) =>
+                setNewContent((v) => ({ ...v, key: e.target.value }))
+              }
+            />
+            <input
+              className="border rounded p-2"
+              placeholder="Title"
+              value={newContent.title}
+              onChange={(e) =>
+                setNewContent((v) => ({ ...v, title: e.target.value }))
+              }
+            />
+            <textarea
+              className="border rounded p-2 md:col-span-2"
+              rows={5}
+              placeholder='JSON content, e.g. {"title":"New heading"}'
+              value={newContent.content}
+              onChange={(e) =>
+                setNewContent((v) => ({ ...v, content: e.target.value }))
+              }
+            />
+          </div>
+
+          <button
+            disabled={isSaving}
+            className="mb-4 inline-flex px-4 py-2 rounded bg-dark text-white"
+            onClick={() =>
+              saveAction(async () => {
+                if (!supabase) return;
+                const parsed = JSON.parse(newContent.content || "{}");
+                const { error } = await supabase.from("site_content").insert({
+                  key: newContent.key,
+                  title: newContent.title,
+                  content: parsed,
+                });
+                if (error) throw error;
+                setNewContent({ key: "", title: "", content: "{}" });
+              })
+            }
+          >
+            Add content item
+          </button>
+
+          <input
+            className="mb-4 w-full border rounded p-2"
+            placeholder="Search site content"
+            value={search.content}
+            onChange={(e) => handleSearch("content", e.target.value)}
+          />
+
+          <div className="space-y-2">
+            {contentsPg.pageItems.map((c) => (
+              <div key={c.id} className="border rounded p-3">
+                {editingId === `content-${c.id}` ? (
+                  <div className="grid grid-cols-1 gap-2">
+                    <input
+                      className="border rounded p-2"
+                      value={editingDraft.title || ""}
+                      onChange={(e) =>
+                        setEditingDraft((d) => ({
+                          ...d,
+                          title: e.target.value,
+                        }))
+                      }
+                    />
+                    <textarea
+                      className="border rounded p-2"
+                      rows={6}
+                      value={
+                        typeof editingDraft.content === "string"
+                          ? editingDraft.content
+                          : JSON.stringify(editingDraft.content || {}, null, 2)
+                      }
+                      onChange={(e) =>
+                        setEditingDraft((d) => ({
+                          ...d,
+                          content: e.target.value,
+                        }))
+                      }
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        className="px-3 py-1 rounded bg-blue text-white"
+                        onClick={() =>
+                          saveAction(async () => {
+                            if (!supabase) return;
+                            const contentValue =
+                              typeof editingDraft.content === "string"
+                                ? JSON.parse(editingDraft.content || "{}")
+                                : editingDraft.content || {};
+                            const { error } = await supabase
+                              .from("site_content")
+                              .update({
+                                title: editingDraft.title,
+                                content: contentValue,
+                              })
+                              .eq("id", c.id);
+                            if (error) throw error;
+                            cancelEdit();
+                          })
+                        }
+                      >
+                        Save
+                      </button>
+                      <button
+                        className="px-3 py-1 rounded bg-gray-2"
+                        onClick={cancelEdit}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium text-dark">{c.title}</p>
+                      <p className="text-xs text-dark-4 mb-2">{c.key}</p>
+                      <pre className="text-xs bg-gray-1 rounded p-2 overflow-x-auto">
+                        {JSON.stringify(c.content || {}, null, 2)}
+                      </pre>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        className="px-3 py-1 rounded bg-blue text-white"
+                        onClick={() =>
+                          startEdit(`content-${c.id}`, {
+                            ...c,
+                            content: JSON.stringify(c.content || {}, null, 2),
+                          })
+                        }
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="px-3 py-1 rounded bg-red text-white"
+                        onClick={() =>
+                          saveAction(async () => {
+                            if (!supabase) return;
+                            const { error } = await supabase
+                              .from("site_content")
+                              .delete()
+                              .eq("id", c.id);
+                            if (error) throw error;
+                          })
+                        }
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {renderPager("content", contentsPg.totalPages)}
         </div>
       )}
     </div>

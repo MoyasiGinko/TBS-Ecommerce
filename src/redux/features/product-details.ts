@@ -1,21 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { Product } from "@/types/product";
+import { emptyProduct, Product } from "@/types/product";
 
 type InitialState = {
   value: Product;
 };
 
 const initialState = {
-  value: {
-    title: "",
-    reviews: 0,
-    price: 0,
-    discountedPrice: 0,
-    img: "",
-    images: [],
-    id: 0,
-    imgs: { thumbnails: [], previews: [] },
-  },
+  value: emptyProduct,
 } as InitialState;
 
 export const productDetails = createSlice({
