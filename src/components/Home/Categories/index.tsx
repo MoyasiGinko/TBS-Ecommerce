@@ -3,7 +3,6 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { useCallback, useRef, useEffect, useState } from "react";
 import Image from "next/image";
 import { Category } from "@/types/category";
-import { fallbackCategories } from "@/lib/data/fallback";
 import { getCategoriesClient } from "@/lib/data/store";
 
 // Import Swiper styles
@@ -13,7 +12,7 @@ import SingleItem from "./SingleItem";
 
 const Categories = () => {
   const sliderRef = useRef(null);
-  const [categories, setCategories] = useState<Category[]>(fallbackCategories);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const handlePrev = useCallback(() => {
     if (!sliderRef.current) return;
@@ -32,8 +31,8 @@ const Categories = () => {
 
     getCategoriesClient()
       .then(setCategories)
-      .catch(() => {
-        setCategories(fallbackCategories);
+      .catch((err) => {
+        console.error("Failed to load categories:", err);
       });
   }, []);
 

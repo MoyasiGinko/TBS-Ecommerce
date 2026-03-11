@@ -4,7 +4,6 @@ import ProductItem from "@/components/Common/ProductItem";
 import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@/types/product";
-import { fallbackProducts } from "@/lib/data/fallback";
 import { getProductsClient } from "@/lib/data/store";
 
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -14,7 +13,7 @@ import "swiper/css";
 
 const RecentlyViewdItems = () => {
   const sliderRef = useRef(null);
-  const [products, setProducts] = useState<Product[]>(fallbackProducts);
+  const [products, setProducts] = useState<Product[]>([]);
 
   const handlePrev = useCallback(() => {
     if (!sliderRef.current) return;
@@ -29,8 +28,8 @@ const RecentlyViewdItems = () => {
   useEffect(() => {
     getProductsClient()
       .then(setProducts)
-      .catch(() => {
-        setProducts(fallbackProducts);
+      .catch((err) => {
+        console.error("Failed to load products:", err);
       });
   }, []);
 

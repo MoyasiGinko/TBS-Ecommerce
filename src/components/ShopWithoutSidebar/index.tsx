@@ -6,18 +6,17 @@ import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
 import CustomSelect from "../ShopWithSidebar/CustomSelect";
 import { Product } from "@/types/product";
-import { fallbackProducts } from "@/lib/data/fallback";
 import { getProductsClient } from "@/lib/data/store";
 
 const ShopWithoutSidebar = () => {
   const [productStyle, setProductStyle] = useState("grid");
-  const [products, setProducts] = useState<Product[]>(fallbackProducts);
+  const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     getProductsClient()
       .then(setProducts)
-      .catch(() => {
-        setProducts(fallbackProducts);
+      .catch((err) => {
+        console.error("Failed to load products:", err);
       });
   }, []);
 

@@ -202,40 +202,40 @@ export const getOrdersForCurrentUser = async (): Promise<Order[]> => {
 
 export const getProductsClient = async (): Promise<Product[]> => {
   const supabase = createSupabaseBrowserClient();
-  if (!supabase) return fallbackProducts;
+  if (!supabase) return [];
 
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_SELECT)
     .order("id", { ascending: true });
 
-  if (error || !data?.length) return fallbackProducts;
+  if (error || !data?.length) return [];
   return data.map(mapProduct);
 };
 
 export const getBlogsClient = async (): Promise<BlogItem[]> => {
   const supabase = createSupabaseBrowserClient();
-  if (!supabase) return fallbackBlogs;
+  if (!supabase) return [];
 
   const { data, error } = await supabase
     .from("blogs")
     .select("id,title,date,views,img")
     .order("id", { ascending: true });
 
-  if (error || !data?.length) return fallbackBlogs;
+  if (error || !data?.length) return [];
   return data.map(mapBlog);
 };
 
 export const getCategoriesClient = async (): Promise<Category[]> => {
   const supabase = createSupabaseBrowserClient();
-  if (!supabase) return fallbackCategories;
+  if (!supabase) return [];
 
   const { data, error } = await supabase
     .from("categories")
     .select("id,title,img")
     .order("id", { ascending: true });
 
-  if (error || !data?.length) return fallbackCategories;
+  if (error || !data?.length) return [];
   return data.map(mapCategory);
 };
 

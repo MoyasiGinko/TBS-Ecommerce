@@ -9,15 +9,16 @@ import ColorsDropdwon from "./ColorsDropdwon";
 import PriceDropdown from "./PriceDropdown";
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
+import SkeletonLoader from "../Common/SkeletonLoader";
 import { Product } from "@/types/product";
-import { fallbackProducts } from "@/lib/data/fallback";
 import { getProductsClient } from "@/lib/data/store";
 
 const ShopWithSidebar = () => {
   const [productStyle, setProductStyle] = useState("grid");
   const [productSidebar, setProductSidebar] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
-  const [products, setProducts] = useState<Product[]>(fallbackProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleStickyMenu = () => {
     if (window.scrollY >= 80) {
@@ -85,9 +86,13 @@ const ShopWithSidebar = () => {
     window.addEventListener("scroll", handleStickyMenu);
 
     getProductsClient()
-      .then(setProducts)
-      .catch(() => {
-        setProducts(fallbackProducts);
+      .then((data) => {
+        setProducts(data);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load products:", err);
+        setIsLoading(false);
       });
 
     // closing sidebar while clicking outside
@@ -288,12 +293,16 @@ const ShopWithSidebar = () => {
                     : "flex flex-col gap-7.5"
                 }`}
               >
-                {products.map((item, key) =>
-                  productStyle === "grid" ? (
-                    <SingleGridItem item={item} key={key} />
-                  ) : (
-                    <SingleListItem item={item} key={key} />
-                  ),
+                {isLoading ? (
+                  <SkeletonLoader count={6} type="product-card" />
+                ) : (
+                  products.map((item, key) =>
+                    productStyle === "grid" ? (
+                      <SingleGridItem item={item} key={key} />
+                    ) : (
+                      <SingleListItem item={item} key={key} />
+                    ),
+                  )
                 )}
               </div>
               {/* <!-- Products Grid Tab Content End --> */}
