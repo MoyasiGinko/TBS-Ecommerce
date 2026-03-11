@@ -1,13 +1,17 @@
 "use client";
 import React, { use, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Breadcrumb from "../Common/Breadcrumb";
 import Image from "next/image";
 import Newsletter from "../Common/Newsletter";
 import RecentlyViewdItems from "./RecentlyViewd";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
 import { useAppSelector } from "@/redux/store";
+import { getProductByIdClient } from "@/lib/data/store";
+import { Product } from "@/types/product";
 
 const ShopDetails = () => {
+  const searchParams = useSearchParams();
   const [activeColor, setActiveColor] = useState("blue");
   const { openPreviewModal } = usePreviewSlider();
   const [previewImg, setPreviewImg] = useState(0);
@@ -75,16 +79,47 @@ const ShopDetails = () => {
 
   const colors = ["red", "blue", "orange", "pink", "purple"];
 
-  const alreadyExist = localStorage.getItem("productDetails");
-  const productFromStorage = useAppSelector(
-    (state) => state.productDetailsReducer.value
+  // Get product from URL params or Redux/localStorage
+  const [product, setProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const productFromRedux = useAppSelector(
+    (state) => state.productDetailsReducer.value,
   );
 
-  const product = alreadyExist ? JSON.parse(alreadyExist) : productFromStorage;
-
   useEffect(() => {
-    localStorage.setItem("productDetails", JSON.stringify(product));
-  }, [product]);
+    const loadProduct = async () => {
+      setIsLoading(true);
+
+      // Try to get product ID from URL
+      const productId = searchParams.get("id");
+
+      if (productId) {
+        // Fetch from Supabase using the ID
+        const fetchedProduct = await getProductByIdClient(productId);
+        if (fetchedProduct) {
+          setProduct(fetchedProduct);
+          localStorage.setItem(
+            "productDetails",
+            JSON.stringify(fetchedProduct),
+          );
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Fallback to Redux or localStorage
+      const alreadyExist = localStorage.getItem("productDetails");
+      const productData = alreadyExist
+        ? JSON.parse(alreadyExist)
+        : productFromRedux;
+
+      setProduct(productData || null);
+      setIsLoading(false);
+    };
+
+    loadProduct();
+  }, [searchParams, productFromRedux]);
 
   // pass the product here when you get the real data.
   const handlePreviewSlider = () => {
@@ -95,8 +130,18 @@ const ShopDetails = () => {
     <>
       <Breadcrumb title={"Shop Details"} pages={["shop details"]} />
 
-      {product.title === "" ? (
-        "Please add product"
+      {isLoading ? (
+        <section className="overflow-hidden relative pb-20 pt-5 lg:pt-20 xl:pt-28">
+          <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
+            <p>Loading product...</p>
+          </div>
+        </section>
+      ) : !product || !product.title ? (
+        <section className="overflow-hidden relative pb-20 pt-5 lg:pt-20 xl:pt-28">
+          <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
+            <p>Please add product</p>
+          </div>
+        </section>
       ) : (
         <>
           <section className="overflow-hidden relative pb-20 pt-5 lg:pt-20 xl:pt-28">
@@ -144,10 +189,11 @@ const ShopDetails = () => {
                       <button
                         onClick={() => setPreviewImg(key)}
                         key={key}
-                        className={`flex items-center justify-center w-15 sm:w-25 h-15 sm:h-25 overflow-hidden rounded-lg bg-gray-2 shadow-1 ease-out duration-200 border-2 hover:border-blue ${key === previewImg
-                          ? "border-blue"
-                          : "border-transparent"
-                          }`}
+                        className={`flex items-center justify-center w-15 sm:w-25 h-15 sm:h-25 overflow-hidden rounded-lg bg-gray-2 shadow-1 ease-out duration-200 border-2 hover:border-blue ${
+                          key === previewImg
+                            ? "border-blue"
+                            : "border-transparent"
+                        }`}
                       >
                         <Image
                           width={50}
@@ -394,8 +440,9 @@ const ShopDetails = () => {
                                   onChange={() => setActiveColor(color)}
                                 />
                                 <div
-                                  className={`flex items-center justify-center w-5.5 h-5.5 rounded-full ${activeColor === color && "border"
-                                    }`}
+                                  className={`flex items-center justify-center w-5.5 h-5.5 rounded-full ${
+                                    activeColor === color && "border"
+                                  }`}
                                   style={{ borderColor: `${color}` }}
                                 >
                                   <span
@@ -433,10 +480,11 @@ const ShopDetails = () => {
 
                                 {/*  */}
                                 <div
-                                  className={`mr-2 flex h-4 w-4 items-center justify-center rounded border ${storage === item.id
-                                    ? "border-blue bg-blue"
-                                    : "border-gray-4"
-                                    } `}
+                                  className={`mr-2 flex h-4 w-4 items-center justify-center rounded border ${
+                                    storage === item.id
+                                      ? "border-blue bg-blue"
+                                      : "border-gray-4"
+                                  } `}
                                 >
                                   <span
                                     className={
@@ -500,10 +548,11 @@ const ShopDetails = () => {
 
                                 {/*  */}
                                 <div
-                                  className={`mr-2 flex h-4 w-4 items-center justify-center rounded border ${type === item.id
-                                    ? "border-blue bg-blue"
-                                    : "border-gray-4"
-                                    } `}
+                                  className={`mr-2 flex h-4 w-4 items-center justify-center rounded border ${
+                                    type === item.id
+                                      ? "border-blue bg-blue"
+                                      : "border-gray-4"
+                                  } `}
                                 >
                                   <span
                                     className={
@@ -567,10 +616,11 @@ const ShopDetails = () => {
 
                                 {/*  */}
                                 <div
-                                  className={`mr-2 flex h-4 w-4 items-center justify-center rounded border ${sim === item.id
-                                    ? "border-blue bg-blue"
-                                    : "border-gray-4"
-                                    } `}
+                                  className={`mr-2 flex h-4 w-4 items-center justify-center rounded border ${
+                                    sim === item.id
+                                      ? "border-blue bg-blue"
+                                      : "border-gray-4"
+                                  } `}
                                 >
                                   <span
                                     className={
@@ -706,10 +756,11 @@ const ShopDetails = () => {
                   <button
                     key={key}
                     onClick={() => setActiveTab(item.id)}
-                    className={`font-medium lg:text-lg ease-out duration-200 hover:text-blue relative before:h-0.5 before:bg-blue before:absolute before:left-0 before:bottom-0 before:ease-out before:duration-200 hover:before:w-full ${activeTab === item.id
-                      ? "text-blue before:w-full"
-                      : "text-dark before:w-0"
-                      }`}
+                    className={`font-medium lg:text-lg ease-out duration-200 hover:text-blue relative before:h-0.5 before:bg-blue before:absolute before:left-0 before:bottom-0 before:ease-out before:duration-200 hover:before:w-full ${
+                      activeTab === item.id
+                        ? "text-blue before:w-full"
+                        : "text-dark before:w-0"
+                    }`}
                   >
                     {item.title}
                   </button>
@@ -721,8 +772,9 @@ const ShopDetails = () => {
               {/* <!-- tab content one start --> */}
               <div>
                 <div
-                  className={`flex-col sm:flex-row gap-7.5 xl:gap-12.5 mt-12.5 ${activeTab === "tabOne" ? "flex" : "hidden"
-                    }`}
+                  className={`flex-col sm:flex-row gap-7.5 xl:gap-12.5 mt-12.5 ${
+                    activeTab === "tabOne" ? "flex" : "hidden"
+                  }`}
                 >
                   <div className="max-w-[670px] w-full">
                     <h2 className="font-medium text-2xl text-dark mb-7">
@@ -773,8 +825,9 @@ const ShopDetails = () => {
               {/* <!-- tab content two start --> */}
               <div>
                 <div
-                  className={`rounded-xl bg-white shadow-1 p-4 sm:p-6 mt-10 ${activeTab === "tabTwo" ? "block" : "hidden"
-                    }`}
+                  className={`rounded-xl bg-white shadow-1 p-4 sm:p-6 mt-10 ${
+                    activeTab === "tabTwo" ? "block" : "hidden"
+                  }`}
                 >
                   {/* <!-- info item --> */}
                   <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
@@ -915,8 +968,9 @@ const ShopDetails = () => {
               {/* <!-- tab content three start --> */}
               <div>
                 <div
-                  className={`flex-col sm:flex-row gap-7.5 xl:gap-12.5 mt-12.5 ${activeTab === "tabThree" ? "flex" : "hidden"
-                    }`}
+                  className={`flex-col sm:flex-row gap-7.5 xl:gap-12.5 mt-12.5 ${
+                    activeTab === "tabThree" ? "flex" : "hidden"
+                  }`}
                 >
                   <div className="max-w-[570px] w-full">
                     <h2 className="font-medium text-2xl text-dark mb-9">

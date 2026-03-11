@@ -188,3 +188,36 @@ export const getTestimonialsClient = async (): Promise<Testimonial[]> => {
   if (error || !data?.length) return fallbackTestimonials;
   return data.map(mapTestimonial);
 };
+
+export const getProductById = async (
+  id: string,
+  client?: SupabaseLike,
+): Promise<Product | null> => {
+  const supabase = resolveServer(client);
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("products")
+    .select("id,title,reviews,price,discounted_price,thumbnails,previews")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) return null;
+  return mapProduct(data);
+};
+
+export const getProductByIdClient = async (
+  id: string,
+): Promise<Product | null> => {
+  const supabase = createSupabaseBrowserClient();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("products")
+    .select("id,title,reviews,price,discounted_price,thumbnails,previews")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) return null;
+  return mapProduct(data);
+};
