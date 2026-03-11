@@ -169,7 +169,46 @@ const ShopDetails = () => {
         <Breadcrumb title={"Shop Details"} pages={["shop details"]} />
         <section className="overflow-hidden relative pb-20 pt-5 lg:pt-20 xl:pt-28">
           <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
-            <p>Loading product...</p>
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,560px)_minmax(0,1fr)] gap-8 xl:gap-16 animate-pulse">
+              {/* Left: Gallery skeleton */}
+              <div>
+                <div className="bg-gray-3 rounded-lg min-h-[430px] w-full mb-4" />
+                <div className="flex gap-4 overflow-x-auto pb-1">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-gray-3 rounded-lg min-h-[84px] min-w-[84px] flex-shrink-0"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Right: Details skeleton */}
+              <div>
+                <div className="h-3 bg-gray-3 rounded w-16 mb-3" />
+                <div className="h-7 bg-gray-3 rounded w-3/4 mb-4" />
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex gap-1">
+                    {Array.from({ length: 5 }).map((_, j) => (
+                      <div key={j} className="h-4 w-4 bg-gray-3 rounded-full" />
+                    ))}
+                  </div>
+                  <div className="h-3 bg-gray-3 rounded w-16" />
+                </div>
+                <div className="h-3 bg-gray-3 rounded w-24 mb-6" />
+                <div className="h-4 bg-gray-3 rounded w-full mb-2" />
+                <div className="h-4 bg-gray-3 rounded w-5/6 mb-6" />
+                <div className="flex gap-3 mb-6">
+                  <div className="h-6 bg-gray-3 rounded w-20" />
+                  <div className="h-6 bg-gray-3 rounded w-24" />
+                </div>
+                <div className="space-y-3 mb-6">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-4 bg-gray-3 rounded" />
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </>

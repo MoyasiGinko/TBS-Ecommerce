@@ -4,6 +4,7 @@ import Breadcrumb from "../Common/Breadcrumb";
 
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
+import SkeletonLoader from "../Common/SkeletonLoader";
 import CustomSelect from "../ShopWithSidebar/CustomSelect";
 import { Product } from "@/types/product";
 import { getProductsClient } from "@/lib/data/store";
@@ -11,12 +12,17 @@ import { getProductsClient } from "@/lib/data/store";
 const ShopWithoutSidebar = () => {
   const [productStyle, setProductStyle] = useState("grid");
   const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     getProductsClient()
-      .then(setProducts)
+      .then((data) => {
+        setProducts(data);
+        setIsLoading(false);
+      })
       .catch((err) => {
         console.error("Failed to load products:", err);
+        setIsLoading(false);
       });
   }, []);
 
@@ -139,12 +145,16 @@ const ShopWithoutSidebar = () => {
                     : "flex flex-col gap-7.5"
                 }`}
               >
-                {products.map((item, key) =>
-                  productStyle === "grid" ? (
-                    <SingleGridItem item={item} key={key} />
-                  ) : (
-                    <SingleListItem item={item} key={key} />
-                  ),
+                {isLoading ? (
+                  <SkeletonLoader count={8} type="product-card" />
+                ) : (
+                  products.map((item, key) =>
+                    productStyle === "grid" ? (
+                      <SingleGridItem item={item} key={key} />
+                    ) : (
+                      <SingleListItem item={item} key={key} />
+                    ),
+                  )
                 )}
               </div>
               {/* <!-- Products Grid Tab Content End --> */}

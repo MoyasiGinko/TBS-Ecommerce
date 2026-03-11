@@ -14,6 +14,7 @@ import "swiper/css";
 const RecentlyViewdItems = () => {
   const sliderRef = useRef(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const handlePrev = useCallback(() => {
     if (!sliderRef.current) return;
@@ -27,9 +28,13 @@ const RecentlyViewdItems = () => {
 
   useEffect(() => {
     getProductsClient()
-      .then(setProducts)
+      .then((data) => {
+        setProducts(data);
+        setIsLoading(false);
+      })
       .catch((err) => {
         console.error("Failed to load products:", err);
+        setIsLoading(false);
       });
   }, []);
 
@@ -99,11 +104,22 @@ const RecentlyViewdItems = () => {
             spaceBetween={20}
             className="justify-between"
           >
-            {products.map((item, key) => (
-              <SwiperSlide key={key}>
-                <ProductItem item={item} />
-              </SwiperSlide>
-            ))}
+            {isLoading ? (
+              <div className="flex gap-6 w-full">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="animate-pulse flex-shrink-0">
+                    <div className="bg-gray-3 rounded-full h-32 w-32 mb-3" />
+                    <div className="h-4 bg-gray-3 rounded w-24 mx-auto" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              products.map((item, key) => (
+                <SwiperSlide key={key}>
+                  <ProductItem item={item} />
+                </SwiperSlide>
+              ))
+            )}
           </Swiper>
         </div>
       </div>
