@@ -9,6 +9,28 @@ values
   ('Watches', '/images/categories/categories-07.png')
 on conflict do nothing;
 
+insert into public.product_detail_enums (enum_group, option_id, option_title, sort_order)
+values
+  ('optionsGroup1', '64gb', '64 GB', 1),
+  ('optionsGroup1', '128gb', '128 GB', 2),
+  ('optionsGroup1', '256gb', '256 GB', 3),
+  ('optionsGroup1', '512gb', '512 GB', 4),
+  ('optionsGroup2', 'new', 'New', 1),
+  ('optionsGroup2', 'refurbished', 'Refurbished', 2),
+  ('optionsGroup2', 'used', 'Used', 3),
+  ('optionsGroup3', 'wifi', 'Wi-Fi', 1),
+  ('optionsGroup3', 'cellular', 'Cellular', 2),
+  ('optionsGroup3', 'wifi-cellular', 'Wi-Fi + Cellular', 3),
+  ('colors', '#111827', '#111827', 1),
+  ('colors', '#3C50E0', '#3C50E0', 2),
+  ('colors', '#EF4444', '#EF4444', 3),
+  ('colors', '#F97316', '#F97316', 4),
+  ('gender', 'men', 'Men', 1),
+  ('gender', 'women', 'Women', 2),
+  ('gender', 'unisex', 'Unisex', 3),
+  ('gender', 'kids', 'Kids', 4)
+on conflict (enum_group, option_id) do nothing;
+
 insert into public.products (title, reviews, price, discounted_price, thumbnails, previews)
 values
   ('Havit HV-G69 USB Gamepad', 15, 59.00, 29.00, '{/images/products/product-1-sm-1.png,/images/products/product-1-sm-2.png}', '{/images/products/product-1-bg-1.png,/images/products/product-1-bg-2.png}'),

@@ -20,6 +20,60 @@ create table if not exists public.products (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.product_detail_enums (
+  id bigint generated always as identity primary key,
+  enum_group text not null check (enum_group in ('optionsGroup1', 'optionsGroup2', 'optionsGroup3', 'colors', 'gender')),
+  option_id text not null,
+  option_title text not null,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  unique (enum_group, option_id)
+);
+
+alter table if exists public.product_detail_enums
+  add column if not exists option_id text;
+
+alter table if exists public.product_detail_enums
+  add column if not exists option_title text;
+
+alter table if exists public.product_detail_enums
+  add column if not exists sort_order int not null default 0;
+
+alter table if exists public.product_detail_enums
+  drop constraint if exists product_detail_enums_enum_group_check;
+
+alter table if exists public.product_detail_enums
+  add constraint product_detail_enums_enum_group_check
+  check (enum_group in ('optionsGroup1', 'optionsGroup2', 'optionsGroup3', 'colors', 'gender'));
+
+update public.product_detail_enums
+set
+  option_id = coalesce(option_id, lower(regexp_replace(coalesce(name, ''), '[^a-z0-9]+', '-', 'g'))),
+  option_title = coalesce(option_title, name)
+where option_id is null or option_title is null;
+
+alter table if exists public.product_detail_enums
+  alter column option_id set not null;
+
+alter table if exists public.product_detail_enums
+  alter column option_title set not null;
+
+alter table if exists public.product_detail_enums
+  drop column if exists name;
+
+alter table if exists public.product_detail_enums
+  drop column if exists options;
+
+alter table if exists public.product_detail_enums
+  drop constraint if exists product_detail_enums_enum_group_name_key;
+
+alter table if exists public.product_detail_enums
+  drop constraint if exists product_detail_enums_enum_group_option_id_key;
+
+alter table if exists public.product_detail_enums
+  add constraint product_detail_enums_enum_group_option_id_key
+  unique (enum_group, option_id);
+
 alter table if exists public.products
   add column if not exists details jsonb not null default '{}'::jsonb;
 
@@ -97,6 +151,7 @@ for each row execute procedure public.handle_new_user_profile();
 
 alter table public.categories enable row level security;
 alter table public.products enable row level security;
+alter table public.product_detail_enums enable row level security;
 alter table public.blogs enable row level security;
 alter table public.testimonials enable row level security;
 alter table public.site_content enable row level security;
@@ -110,6 +165,10 @@ on public.categories for select using (true);
 drop policy if exists "Public read products" on public.products;
 create policy "Public read products"
 on public.products for select using (true);
+
+drop policy if exists "Public read product detail enums" on public.product_detail_enums;
+create policy "Public read product detail enums"
+on public.product_detail_enums for select using (true);
 
 drop policy if exists "Public read blogs" on public.blogs;
 create policy "Public read blogs"
@@ -169,6 +228,12 @@ with check (public.get_my_profile_role() in ('admin', 'manager'));
 drop policy if exists "Admins manage products" on public.products;
 create policy "Admins manage products"
 on public.products for all
+using (public.get_my_profile_role() in ('admin', 'manager'))
+with check (public.get_my_profile_role() in ('admin', 'manager'));
+
+drop policy if exists "Admins manage product detail enums" on public.product_detail_enums;
+create policy "Admins manage product detail enums"
+on public.product_detail_enums for all
 using (public.get_my_profile_role() in ('admin', 'manager'))
 with check (public.get_my_profile_role() in ('admin', 'manager'));
 

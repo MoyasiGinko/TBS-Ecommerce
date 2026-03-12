@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getCurrentProfile, signOutUser } from "@/lib/supabase/auth";
@@ -8,6 +14,7 @@ import { UserProfile } from "@/types/user";
 
 type AdminTab =
   | "products"
+  | "enums"
   | "categories"
   | "blogs"
   | "testimonials"
@@ -65,6 +72,21 @@ type SiteContentRow = {
   content: Record<string, any>;
 };
 
+type EnumGroupKey =
+  | "optionsGroup1"
+  | "optionsGroup2"
+  | "optionsGroup3"
+  | "colors"
+  | "gender";
+
+type ProductDetailEnumRow = {
+  id: number;
+  enum_group: EnumGroupKey;
+  option_id: string;
+  option_title: string;
+  sort_order: number;
+};
+
 type ProductDetailsForm = {
   rating: number;
   category: string;
@@ -75,13 +97,14 @@ type ProductDetailsForm = {
   promoText: string;
   brand: string;
   model: string;
-  colors: string;
+  colors: string[];
+  gender: string[];
   highlights: string;
   specificationSummary: string;
   careInstructions: string;
-  optionsGroup1: string;
-  optionsGroup2: string;
-  optionsGroup3: string;
+  optionsGroup1: string[];
+  optionsGroup2: string[];
+  optionsGroup3: string[];
   additionalInformation: string;
 };
 
@@ -89,6 +112,93 @@ type ContentField = {
   id: string;
   key: string;
   value: string;
+};
+
+type MultiSelectOption = {
+  id: string;
+  title: string;
+};
+
+type CheckedMultiSelectProps = {
+  label: string;
+  value: string[];
+  options: MultiSelectOption[];
+  onChange: (nextValue: string[]) => void;
+};
+
+const CheckedMultiSelect = ({
+  label,
+  value,
+  options,
+  onChange,
+}: CheckedMultiSelectProps) => {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (!wrapperRef.current) return;
+      if (!wrapperRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
+  const selectedTitles = options
+    .filter((option) => value.includes(option.id))
+    .map((option) => option.title);
+
+  const toggle = (id: string) => {
+    if (value.includes(id)) {
+      onChange(value.filter((currentId) => currentId !== id));
+      return;
+    }
+    onChange([...value, id]);
+  };
+
+  return (
+    <div ref={wrapperRef} className="relative space-y-1">
+      <p className="text-xs text-dark-4">{label}</p>
+      <button
+        type="button"
+        className="w-full rounded-xl border border-gray-3 bg-white px-3.5 py-2.5 text-left text-sm outline-none transition hover:border-blue focus:border-blue focus:ring-2 focus:ring-blue/20"
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span className="block truncate text-dark">
+          {selectedTitles.length
+            ? `${selectedTitles.length} selected: ${selectedTitles.join(", ")}`
+            : "Select options"}
+        </span>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full z-30 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-gray-3 bg-white p-2 shadow-lg">
+          {options.length ? (
+            options.map((option) => (
+              <label
+                key={option.id}
+                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-gray-1"
+              >
+                <input
+                  type="checkbox"
+                  checked={value.includes(option.id)}
+                  onChange={() => toggle(option.id)}
+                />
+                <span>{option.title}</span>
+              </label>
+            ))
+          ) : (
+            <p className="px-2 py-2 text-sm text-dark-4">
+              No options available
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const PAGE_SIZE = 6;
@@ -103,13 +213,14 @@ const defaultProductDetails = (): ProductDetailsForm => ({
   promoText: "",
   brand: "",
   model: "",
-  colors: "",
+  colors: [],
+  gender: [],
   highlights: "",
   specificationSummary: "",
   careInstructions: "",
-  optionsGroup1: "",
-  optionsGroup2: "",
-  optionsGroup3: "",
+  optionsGroup1: [],
+  optionsGroup2: [],
+  optionsGroup3: [],
   additionalInformation: "",
 });
 
@@ -119,7 +230,18 @@ const makeId = () =>
 const toCsv = (value: any) =>
   Array.isArray(value) ? value.map((item) => String(item)).join(", ") : "";
 
-const fromProductDetails = (details: Record<string, any>): ProductDetailsForm => {
+const toSelectedOptionIds = (value: any) =>
+  Array.isArray(value)
+    ? value
+        .map((item: any) =>
+          String(item?.id || item?.title || item || "").trim(),
+        )
+        .filter(Boolean)
+    : [];
+
+const fromProductDetails = (
+  details: Record<string, any>,
+): ProductDetailsForm => {
   const additionalInformation = Array.isArray(details?.additionalInformation)
     ? details.additionalInformation
         .map((item: any) => {
@@ -131,14 +253,6 @@ const fromProductDetails = (details: Record<string, any>): ProductDetailsForm =>
         .join("\n")
     : "";
 
-  const optionCsv = (value: any) =>
-    Array.isArray(value)
-      ? value
-          .map((item: any) => String(item?.title || item?.id || "").trim())
-          .filter(Boolean)
-          .join(", ")
-      : "";
-
   return {
     rating: Number(details?.rating ?? 4.7),
     category: String(details?.category || ""),
@@ -149,68 +263,26 @@ const fromProductDetails = (details: Record<string, any>): ProductDetailsForm =>
     promoText: String(details?.promoText || ""),
     brand: String(details?.brand || ""),
     model: String(details?.model || ""),
-    colors: toCsv(details?.colors),
+    colors: toSelectedOptionIds(details?.colors),
+    gender: toSelectedOptionIds(details?.gender),
     highlights: toCsv(details?.highlights),
     specificationSummary: String(details?.specificationSummary || ""),
     careInstructions: String(details?.careInstructions || ""),
-    optionsGroup1: optionCsv(details?.optionsGroup1),
-    optionsGroup2: optionCsv(details?.optionsGroup2),
-    optionsGroup3: optionCsv(details?.optionsGroup3),
+    optionsGroup1: toSelectedOptionIds(details?.optionsGroup1),
+    optionsGroup2: toSelectedOptionIds(details?.optionsGroup2),
+    optionsGroup3: toSelectedOptionIds(details?.optionsGroup3),
     additionalInformation,
   };
 };
-
-const parseOptionCsv = (value: string) =>
-  value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .map((item) => ({ id: item.toLowerCase().replace(/\s+/g, "-"), title: item }));
-
-const toProductDetailsPayload = (details: ProductDetailsForm) => ({
-  rating: Number(details.rating || 0),
-  category: details.category,
-  shortDescription: details.shortDescription,
-  description: details.description,
-  availability: details.availability,
-  badge: details.badge,
-  promoText: details.promoText,
-  brand: details.brand,
-  model: details.model,
-  colors: details.colors
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean),
-  highlights: details.highlights
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean),
-  specificationSummary: details.specificationSummary,
-  careInstructions: details.careInstructions,
-  optionsGroup1: parseOptionCsv(details.optionsGroup1),
-  optionsGroup2: parseOptionCsv(details.optionsGroup2),
-  optionsGroup3: parseOptionCsv(details.optionsGroup3),
-  additionalInformation: details.additionalInformation
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [label, ...valueParts] = line.split(":");
-      const value = valueParts.join(":").trim();
-      return {
-        label: (label || "").trim(),
-        value,
-      };
-    })
-    .filter((item) => item.label && item.value),
-});
 
 const inferStringValue = (value: any) => {
   if (typeof value === "string") return value;
   return JSON.stringify(value);
 };
 
-const toContentFields = (content: Record<string, any> | null | undefined): ContentField[] => {
+const toContentFields = (
+  content: Record<string, any> | null | undefined,
+): ContentField[] => {
   const source = content && typeof content === "object" ? content : {};
   const entries = Object.entries(source);
   if (!entries.length) {
@@ -233,7 +305,10 @@ const parseContentValue = (raw: string) => {
   if (value === "null") return null;
   if (/^-?\d+(\.\d+)?$/.test(value)) return Number(value);
 
-  if ((value.startsWith("{") && value.endsWith("}")) || (value.startsWith("[") && value.endsWith("]"))) {
+  if (
+    (value.startsWith("{") && value.endsWith("}")) ||
+    (value.startsWith("[") && value.endsWith("]"))
+  ) {
     try {
       return JSON.parse(value);
     } catch {
@@ -275,6 +350,9 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<AdminTab>("products");
 
   const [products, setProducts] = useState<ProductRow[]>([]);
+  const [productDetailEnums, setProductDetailEnums] = useState<
+    ProductDetailEnumRow[]
+  >([]);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [blogs, setBlogs] = useState<BlogRow[]>([]);
   const [testimonials, setTestimonials] = useState<TestimonialRow[]>([]);
@@ -293,6 +371,16 @@ const AdminDashboard = () => {
   });
 
   const [newCategory, setNewCategory] = useState({ title: "", img: "" });
+
+  const [newEnumOptionByGroup, setNewEnumOptionByGroup] = useState<
+    Record<EnumGroupKey, string>
+  >({
+    optionsGroup1: "",
+    optionsGroup2: "",
+    optionsGroup3: "",
+    colors: "",
+    gender: "",
+  });
 
   const [newBlog, setNewBlog] = useState({
     title: "",
@@ -325,6 +413,7 @@ const AdminDashboard = () => {
 
   const [search, setSearch] = useState<Record<AdminTab, string>>({
     products: "",
+    enums: "",
     categories: "",
     blogs: "",
     testimonials: "",
@@ -335,6 +424,7 @@ const AdminDashboard = () => {
 
   const [page, setPage] = useState<Record<AdminTab, number>>({
     products: 1,
+    enums: 1,
     categories: 1,
     blogs: 1,
     testimonials: 1,
@@ -351,6 +441,13 @@ const AdminDashboard = () => {
       .split(",")
       .map((v) => v.trim())
       .filter(Boolean);
+
+  const cleanEnumOptionId = (value: string) =>
+    value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9#]+/g, "-")
+      .replace(/(^-|-$)/g, "");
 
   const loadAll = useCallback(async () => {
     if (!supabase) {
@@ -372,6 +469,7 @@ const AdminDashboard = () => {
 
     const [
       productsRes,
+      enumsRes,
       categoriesRes,
       blogsRes,
       testimonialsRes,
@@ -385,6 +483,12 @@ const AdminDashboard = () => {
           "id,title,reviews,price,discounted_price,thumbnails,previews,details",
         )
         .order("id"),
+      supabase
+        .from("product_detail_enums")
+        .select("id,enum_group,option_id,option_title,sort_order")
+        .order("enum_group", { ascending: true })
+        .order("sort_order", { ascending: true })
+        .order("option_title", { ascending: true }),
       supabase.from("categories").select("id,title,img").order("id"),
       supabase.from("blogs").select("id,title,date,views,img").order("id"),
       supabase
@@ -406,6 +510,7 @@ const AdminDashboard = () => {
     ]);
 
     setProducts((productsRes.data || []) as ProductRow[]);
+    setProductDetailEnums((enumsRes.data || []) as ProductDetailEnumRow[]);
     setCategories((categoriesRes.data || []) as CategoryRow[]);
     setBlogs((blogsRes.data || []) as BlogRow[]);
     setTestimonials((testimonialsRes.data || []) as TestimonialRow[]);
@@ -423,6 +528,7 @@ const AdminDashboard = () => {
 
     const firstError =
       productsRes.error ||
+      enumsRes.error ||
       categoriesRes.error ||
       blogsRes.error ||
       testimonialsRes.error ||
@@ -487,6 +593,11 @@ const AdminDashboard = () => {
   const filteredProducts = products.filter((p) =>
     p.title.toLowerCase().includes(search.products.toLowerCase()),
   );
+  const filteredEnums = productDetailEnums.filter((item) =>
+    (item.option_title + item.option_id + item.enum_group)
+      .toLowerCase()
+      .includes(search.enums.toLowerCase()),
+  );
   const filteredCategories = categories.filter((c) =>
     c.title.toLowerCase().includes(search.categories.toLowerCase()),
   );
@@ -521,6 +632,76 @@ const AdminDashboard = () => {
   const ordersPg = paginate(filteredOrders, page.orders);
   const usersPg = paginate(filteredUsers, page.users);
   const contentsPg = paginate(filteredContents, page.content);
+
+  const selectOptions = (group: EnumGroupKey) =>
+    productDetailEnums.filter((item) => item.enum_group === group);
+
+  const optionGroups: Array<{
+    key: "optionsGroup1" | "optionsGroup2" | "optionsGroup3";
+    label: string;
+  }> = [
+    { key: "optionsGroup1", label: "Option Group 1" },
+    { key: "optionsGroup2", label: "Option Group 2" },
+    { key: "optionsGroup3", label: "Option Group 3" },
+  ];
+
+  const enumGroups: Array<{ key: EnumGroupKey; label: string }> = [
+    { key: "optionsGroup1", label: "Option Group 1" },
+    { key: "optionsGroup2", label: "Option Group 2" },
+    { key: "optionsGroup3", label: "Option Group 3" },
+    { key: "colors", label: "Colors" },
+    { key: "gender", label: "Gender" },
+  ];
+
+  const toOptionObjects = (group: EnumGroupKey, selectedIds: string[]) => {
+    const byId = new Map(
+      selectOptions(group).map((item) => [item.option_id, item.option_title]),
+    );
+    return selectedIds.map((id) => ({ id, title: byId.get(id) || id }));
+  };
+
+  const toStringValues = (group: EnumGroupKey, selectedIds: string[]) => {
+    const byId = new Map(
+      selectOptions(group).map((item) => [item.option_id, item.option_title]),
+    );
+    return selectedIds.map((id) => byId.get(id) || id);
+  };
+
+  const buildProductDetailsPayload = (details: ProductDetailsForm) => ({
+    rating: Number(details.rating || 0),
+    category: details.category,
+    shortDescription: details.shortDescription,
+    description: details.description,
+    availability: details.availability,
+    badge: details.badge,
+    promoText: details.promoText,
+    brand: details.brand,
+    model: details.model,
+    colors: toStringValues("colors", details.colors),
+    gender: toStringValues("gender", details.gender),
+    highlights: details.highlights
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
+    specificationSummary: details.specificationSummary,
+    careInstructions: details.careInstructions,
+    optionsGroup1: toOptionObjects("optionsGroup1", details.optionsGroup1),
+    optionsGroup2: toOptionObjects("optionsGroup2", details.optionsGroup2),
+    optionsGroup3: toOptionObjects("optionsGroup3", details.optionsGroup3),
+    additionalInformation: details.additionalInformation
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const [label, ...valueParts] = line.split(":");
+        const value = valueParts.join(":").trim();
+        return {
+          label: (label || "").trim(),
+          value,
+        };
+      })
+      .filter((item) => item.label && item.value),
+  });
 
   const renderPager = (tab: AdminTab, totalPages: number) => (
     <div className="mt-4 flex items-center gap-2">
@@ -635,10 +816,14 @@ const AdminDashboard = () => {
         <p className="text-red text-custom-sm mb-4">{message}</p>
       ) : null}
 
-      <div className="grid grid-cols-2 lg:grid-cols-7 gap-3 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-8 gap-3 mb-6">
         <div className={headerCard}>
           <p className="text-xs">Products</p>
           <p className="font-semibold text-xl">{products.length}</p>
+        </div>
+        <div className={headerCard}>
+          <p className="text-xs">Enums</p>
+          <p className="font-semibold text-xl">{productDetailEnums.length}</p>
         </div>
         <div className={headerCard}>
           <p className="text-xs">Categories</p>
@@ -670,6 +855,7 @@ const AdminDashboard = () => {
         {(
           [
             ["products", "Products"],
+            ["enums", "Enums"],
             ["categories", "Categories"],
             ["blogs", "Blogs"],
             ["testimonials", "Testimonials"],
@@ -846,17 +1032,6 @@ const AdminDashboard = () => {
             />
             <input
               className={inputClass}
-              placeholder="Colors comma separated"
-              value={newProduct.details.colors}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: { ...v.details, colors: e.target.value },
-                }))
-              }
-            />
-            <input
-              className={inputClass}
               placeholder="Highlights comma separated"
               value={newProduct.details.highlights}
               onChange={(e) =>
@@ -866,39 +1041,55 @@ const AdminDashboard = () => {
                 }))
               }
             />
-            <input
-              className={inputClass}
-              placeholder="Options group 1 (comma separated)"
-              value={newProduct.details.optionsGroup1}
-              onChange={(e) =>
+            <CheckedMultiSelect
+              label="Colors"
+              value={newProduct.details.colors}
+              options={selectOptions("colors").map((item) => ({
+                id: item.option_id,
+                title: item.option_title,
+              }))}
+              onChange={(nextValue) =>
                 setNewProduct((v) => ({
                   ...v,
-                  details: { ...v.details, optionsGroup1: e.target.value },
+                  details: { ...v.details, colors: nextValue },
                 }))
               }
             />
-            <input
-              className={inputClass}
-              placeholder="Option group 2 (comma separated)"
-              value={newProduct.details.optionsGroup2}
-              onChange={(e) =>
+            <CheckedMultiSelect
+              label="Gender"
+              value={newProduct.details.gender}
+              options={selectOptions("gender").map((item) => ({
+                id: item.option_id,
+                title: item.option_title,
+              }))}
+              onChange={(nextValue) =>
                 setNewProduct((v) => ({
                   ...v,
-                  details: { ...v.details, optionsGroup2: e.target.value },
+                  details: { ...v.details, gender: nextValue },
                 }))
               }
             />
-            <input
-              className={inputClass}
-              placeholder="Option group 3 (comma separated)"
-              value={newProduct.details.optionsGroup3}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: { ...v.details, optionsGroup3: e.target.value },
-                }))
-              }
-            />
+
+            {optionGroups.map((group) => (
+              <CheckedMultiSelect
+                key={`new-${group.key}`}
+                label={group.label}
+                value={newProduct.details[group.key]}
+                options={selectOptions(group.key).map((item) => ({
+                  id: item.option_id,
+                  title: item.option_title,
+                }))}
+                onChange={(nextValue) =>
+                  setNewProduct((v) => ({
+                    ...v,
+                    details: {
+                      ...v.details,
+                      [group.key]: nextValue,
+                    },
+                  }))
+                }
+              />
+            ))}
 
             <textarea
               className={`${inputClass} md:col-span-2 min-h-[92px]`}
@@ -975,7 +1166,7 @@ const AdminDashboard = () => {
                   discounted_price: newProduct.discounted_price,
                   thumbnails: toArray(newProduct.thumbnails),
                   previews: toArray(newProduct.previews),
-                  details: toProductDetailsPayload(newProduct.details),
+                  details: buildProductDetailsPayload(newProduct.details),
                 });
                 if (error) throw error;
                 setNewProduct({
@@ -1220,20 +1411,6 @@ const AdminDashboard = () => {
                     />
                     <input
                       className={inputClass}
-                      placeholder="Colors comma separated"
-                      value={editingDraft.details?.colors || ""}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            colors: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className={inputClass}
                       placeholder="Highlights comma separated"
                       value={editingDraft.details?.highlights || ""}
                       onChange={(e) =>
@@ -1246,48 +1423,61 @@ const AdminDashboard = () => {
                         }))
                       }
                     />
-                    <input
-                      className={inputClass}
-                      placeholder="Options group 1 (comma separated)"
-                      value={editingDraft.details?.optionsGroup1 || ""}
-                      onChange={(e) =>
+                    <CheckedMultiSelect
+                      label="Colors"
+                      value={editingDraft.details?.colors || []}
+                      options={selectOptions("colors").map((item) => ({
+                        id: item.option_id,
+                        title: item.option_title,
+                      }))}
+                      onChange={(nextValue) =>
                         setEditingDraft((d) => ({
                           ...d,
                           details: {
                             ...(d.details || {}),
-                            optionsGroup1: e.target.value,
+                            colors: nextValue,
                           },
                         }))
                       }
                     />
-                    <input
-                      className={inputClass}
-                      placeholder="Option group 2 (comma separated)"
-                      value={editingDraft.details?.optionsGroup2 || ""}
-                      onChange={(e) =>
+                    <CheckedMultiSelect
+                      label="Gender"
+                      value={editingDraft.details?.gender || []}
+                      options={selectOptions("gender").map((item) => ({
+                        id: item.option_id,
+                        title: item.option_title,
+                      }))}
+                      onChange={(nextValue) =>
                         setEditingDraft((d) => ({
                           ...d,
                           details: {
                             ...(d.details || {}),
-                            optionsGroup2: e.target.value,
+                            gender: nextValue,
                           },
                         }))
                       }
                     />
-                    <input
-                      className={inputClass}
-                      placeholder="Option group 3 (comma separated)"
-                      value={editingDraft.details?.optionsGroup3 || ""}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            optionsGroup3: e.target.value,
-                          },
-                        }))
-                      }
-                    />
+
+                    {optionGroups.map((group) => (
+                      <CheckedMultiSelect
+                        key={`edit-${p.id}-${group.key}`}
+                        label={group.label}
+                        value={editingDraft.details?.[group.key] || []}
+                        options={selectOptions(group.key).map((item) => ({
+                          id: item.option_id,
+                          title: item.option_title,
+                        }))}
+                        onChange={(nextValue) =>
+                          setEditingDraft((d) => ({
+                            ...d,
+                            details: {
+                              ...(d.details || {}),
+                              [group.key]: nextValue,
+                            },
+                          }))
+                        }
+                      />
+                    ))}
                     <textarea
                       className={`${inputClass} md:col-span-2 min-h-[92px]`}
                       placeholder="Specification summary"
@@ -1345,8 +1535,9 @@ const AdminDashboard = () => {
                                 discounted_price: editingDraft.discounted_price,
                                 thumbnails: editingDraft.thumbnails || [],
                                 previews: editingDraft.previews || [],
-                                details: toProductDetailsPayload(
-                                  editingDraft.details || defaultProductDetails(),
+                                details: buildProductDetailsPayload(
+                                  editingDraft.details ||
+                                    defaultProductDetails(),
                                 ),
                               })
                               .eq("id", p.id);
@@ -1417,6 +1608,113 @@ const AdminDashboard = () => {
             ))}
           </div>
           {renderPager("products", productsPg.totalPages)}
+        </div>
+      )}
+
+      {activeTab === "enums" && (
+        <div className={sectionCardClass}>
+          <h3 className="font-medium text-lg mb-3">
+            Product Detail Enum Options ({productDetailEnums.length})
+          </h3>
+
+          <input
+            className={`${inputClass} mb-4`}
+            placeholder="Search enum options"
+            value={search.enums}
+            onChange={(e) => handleSearch("enums", e.target.value)}
+          />
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {enumGroups.map((group) => {
+              const options = (
+                search.enums ? filteredEnums : productDetailEnums
+              )
+                .filter((item) => item.enum_group === group.key)
+                .sort((a, b) => a.option_title.localeCompare(b.option_title));
+
+              return (
+                <div
+                  key={group.key}
+                  className="rounded-xl border border-gray-3 bg-white p-4"
+                >
+                  <p className="font-medium text-dark mb-3">{group.label}</p>
+
+                  <div className="mb-3 space-y-2">
+                    {options.length ? (
+                      options.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between rounded-lg border border-gray-3 bg-gray-1 px-3 py-2"
+                        >
+                          <p className="text-sm text-dark">
+                            {item.option_title}
+                          </p>
+                          <button
+                            className="text-xs rounded-md border border-red px-2 py-1 text-red hover:bg-red hover:text-white"
+                            onClick={() =>
+                              saveAction(async () => {
+                                if (!supabase) return;
+                                const { error } = await supabase
+                                  .from("product_detail_enums")
+                                  .delete()
+                                  .eq("id", item.id);
+                                if (error) throw error;
+                              })
+                            }
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-dark-4">No options yet.</p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      className={inputClass}
+                      placeholder={`Add ${group.label} option`}
+                      value={newEnumOptionByGroup[group.key]}
+                      onChange={(e) =>
+                        setNewEnumOptionByGroup((prev) => ({
+                          ...prev,
+                          [group.key]: e.target.value,
+                        }))
+                      }
+                    />
+                    <button
+                      className={primaryBtnClass}
+                      disabled={isSaving}
+                      onClick={() =>
+                        saveAction(async () => {
+                          if (!supabase) return;
+                          const optionTitle =
+                            newEnumOptionByGroup[group.key].trim();
+                          if (!optionTitle) return;
+                          const optionId = cleanEnumOptionId(optionTitle);
+                          const { error } = await supabase
+                            .from("product_detail_enums")
+                            .insert({
+                              enum_group: group.key,
+                              option_id: optionId,
+                              option_title: optionTitle,
+                            });
+                          if (error) throw error;
+                          setNewEnumOptionByGroup((prev) => ({
+                            ...prev,
+                            [group.key]: "",
+                          }));
+                        })
+                      }
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -2153,10 +2451,7 @@ const AdminDashboard = () => {
                 >
                   Save
                 </button>
-                <button
-                  className={secondaryBtnClass}
-                  onClick={cancelEdit}
-                >
+                <button className={secondaryBtnClass} onClick={cancelEdit}>
                   Cancel
                 </button>
               </div>
@@ -2239,7 +2534,10 @@ const AdminDashboard = () => {
                 Content fields
               </p>
               {newContent.fields.map((field) => (
-                <div key={field.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2">
+                <div
+                  key={field.id}
+                  className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2"
+                >
                   <input
                     className={inputClass}
                     placeholder="Field key"
@@ -2334,7 +2632,10 @@ const AdminDashboard = () => {
 
           <div className="space-y-2">
             {contentsPg.pageItems.map((c) => (
-              <div key={c.id} className="rounded-xl border border-gray-3 bg-white p-3">
+              <div
+                key={c.id}
+                className="rounded-xl border border-gray-3 bg-white p-3"
+              >
                 {editingId === `content-${c.id}` ? (
                   <div className="grid grid-cols-1 gap-2">
                     <input
@@ -2349,7 +2650,10 @@ const AdminDashboard = () => {
                     />
 
                     {(editingDraft.fields || []).map((field: ContentField) => (
-                      <div key={field.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2">
+                      <div
+                        key={field.id}
+                        className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2"
+                      >
                         <input
                           className={inputClass}
                           placeholder="Field key"
@@ -2357,10 +2661,11 @@ const AdminDashboard = () => {
                           onChange={(e) =>
                             setEditingDraft((d) => ({
                               ...d,
-                              fields: (d.fields || []).map((item: ContentField) =>
-                                item.id === field.id
-                                  ? { ...item, key: e.target.value }
-                                  : item,
+                              fields: (d.fields || []).map(
+                                (item: ContentField) =>
+                                  item.id === field.id
+                                    ? { ...item, key: e.target.value }
+                                    : item,
                               ),
                             }))
                           }
@@ -2372,10 +2677,11 @@ const AdminDashboard = () => {
                           onChange={(e) =>
                             setEditingDraft((d) => ({
                               ...d,
-                              fields: (d.fields || []).map((item: ContentField) =>
-                                item.id === field.id
-                                  ? { ...item, value: e.target.value }
-                                  : item,
+                              fields: (d.fields || []).map(
+                                (item: ContentField) =>
+                                  item.id === field.id
+                                    ? { ...item, value: e.target.value }
+                                    : item,
                               ),
                             }))
                           }
@@ -2389,7 +2695,8 @@ const AdminDashboard = () => {
                               fields:
                                 (d.fields || []).length > 1
                                   ? (d.fields || []).filter(
-                                      (item: ContentField) => item.id !== field.id,
+                                      (item: ContentField) =>
+                                        item.id !== field.id,
                                     )
                                   : d.fields,
                             }))
@@ -2425,7 +2732,9 @@ const AdminDashboard = () => {
                               .from("site_content")
                               .update({
                                 title: editingDraft.title,
-                                content: toContentPayload(editingDraft.fields || []),
+                                content: toContentPayload(
+                                  editingDraft.fields || [],
+                                ),
                               })
                               .eq("id", c.id);
                             if (error) throw error;
