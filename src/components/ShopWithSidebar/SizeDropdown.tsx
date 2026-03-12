@@ -1,8 +1,20 @@
 "use client";
 import React, { useState } from "react";
 
-const SizeDropdown = () => {
+type SizeDropdownProps = {
+  sizes: string[];
+  selectedSize: string;
+  onSizeChange: (value: string) => void;
+};
+
+const SizeDropdown = ({
+  sizes,
+  selectedSize,
+  onSizeChange,
+}: SizeDropdownProps) => {
   const [toggleDropdown, setToggleDropdown] = useState(true);
+
+  const normalizedSizes = sizes.length ? sizes : ["N/A"];
   return (
     <div className="bg-white shadow-1 rounded-lg">
       <div
@@ -13,7 +25,7 @@ const SizeDropdown = () => {
       >
         <p className="text-dark">Size</p>
         <button
-          onClick={() => setToggleDropdown(!toggleDropdown)}
+          type="button"
           aria-label="button for size dropdown"
           className={`text-dark ease-out duration-200 ${
             toggleDropdown && "rotate-180"
@@ -43,53 +55,35 @@ const SizeDropdown = () => {
           toggleDropdown ? "flex" : "hidden"
         }`}
       >
-        <label
-          htmlFor="sizeM"
-          className="cursor-pointer select-none flex items-center rounded-md bg-blue text-white hover:bg-blue hover:text-white"
-        >
-          <div className="relative">
-            <input type="radio" name="size" id="sizeM" className="sr-only" />
-            <div className="text-custom-sm py-[5px] px-3.5 rounded-[5px]">
-              M
-            </div>
-          </div>
-        </label>
+        {normalizedSizes.map((size) => {
+          const selected = selectedSize === size;
 
-        <label
-          htmlFor="sizeL"
-          className="cursor-pointer select-none flex items-center rounded-md hover:bg-blue hover:text-white"
-        >
-          <div className="relative">
-            <input type="radio" name="size" id="sizeL" className="sr-only" />
-            <div className="text-custom-sm py-[5px] px-3.5 rounded-[5px]">
-              L
-            </div>
-          </div>
-        </label>
-
-        <label
-          htmlFor="sizeXL"
-          className="cursor-pointer select-none flex items-center rounded-md hover:bg-blue hover:text-white"
-        >
-          <div className="relative">
-            <input type="radio" name="size" id="sizeXL" className="sr-only" />
-            <div className="text-custom-sm py-[5px] px-3.5 rounded-[5px]">
-              XL
-            </div>
-          </div>
-        </label>
-
-        <label
-          htmlFor="sizeXXL"
-          className="cursor-pointer select-none flex items-center rounded-md hover:bg-blue hover:text-white"
-        >
-          <div className="relative">
-            <input type="radio" name="size" id="sizeXXL" className="sr-only" />
-            <div className="text-custom-sm py-[5px] px-3.5 rounded-[5px]">
-              XXL
-            </div>
-          </div>
-        </label>
+          return (
+            <label
+              key={size}
+              htmlFor={`size-${size}`}
+              className={`cursor-pointer select-none flex items-center rounded-md ${
+                selected
+                  ? "bg-blue text-white"
+                  : "hover:bg-blue hover:text-white"
+              }`}
+            >
+              <div className="relative">
+                <input
+                  type="radio"
+                  name="size"
+                  id={`size-${size}`}
+                  className="sr-only"
+                  checked={selected}
+                  onChange={() => onSizeChange(selected ? "" : size)}
+                />
+                <div className="text-custom-sm py-[5px] px-3.5 rounded-[5px]">
+                  {size}
+                </div>
+              </div>
+            </label>
+          );
+        })}
       </div>
     </div>
   );

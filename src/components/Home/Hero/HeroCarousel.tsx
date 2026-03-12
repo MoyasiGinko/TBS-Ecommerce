@@ -1,4 +1,5 @@
 "use client";
+import React, { useEffect, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination } from "swiper/modules";
 
@@ -7,8 +8,41 @@ import "swiper/css/pagination";
 import "swiper/css";
 
 import Image from "next/image";
+import { getSiteContentMapClient } from "@/lib/data/siteContent";
+
+type HeroMainContent = {
+  salePercent?: string;
+  title?: string;
+  description?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+  image?: string;
+};
+
+const defaultMain: HeroMainContent = {
+  salePercent: "30%",
+  title: "True Wireless Noise Cancelling Headphone",
+  description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+  ctaLabel: "Shop Now",
+  ctaHref: "#",
+  image: "/images/hero/hero-01.png",
+};
 
 const HeroCarousal = () => {
+  const [mainContent, setMainContent] = useState<HeroMainContent>(defaultMain);
+
+  useEffect(() => {
+    const loadContent = async () => {
+      const contentMap = await getSiteContentMapClient();
+      const managed = contentMap["home.hero_main"];
+      if (managed) {
+        setMainContent({ ...defaultMain, ...managed });
+      }
+    };
+
+    loadContent();
+  }, []);
+
   return (
     <Swiper
       spaceBetween={30}
@@ -28,7 +62,7 @@ const HeroCarousal = () => {
           <div className="max-w-[394px] py-10 sm:py-15 lg:py-24.5 pl-4 sm:pl-7.5 lg:pl-12.5">
             <div className="flex items-center gap-4 mb-7.5 sm:mb-10">
               <span className="block font-semibold text-heading-3 sm:text-heading-1 text-blue">
-                30%
+                {mainContent.salePercent}
               </span>
               <span className="block text-dark text-sm sm:text-custom-1 sm:leading-[24px]">
                 Sale
@@ -38,24 +72,22 @@ const HeroCarousal = () => {
             </div>
 
             <h1 className="font-semibold text-dark text-xl sm:text-3xl mb-3">
-              <a href="#">True Wireless Noise Cancelling Headphone</a>
+              <a href="#">{mainContent.title}</a>
             </h1>
 
-            <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi at ipsum at risus euismod lobortis in
-            </p>
+            <p>{mainContent.description}</p>
 
             <a
-              href="#"
+              href={mainContent.ctaHref || "#"}
               className="inline-flex font-medium text-white text-custom-sm rounded-md bg-dark py-3 px-9 ease-out duration-200 hover:bg-blue mt-10"
             >
-              Shop Now
+              {mainContent.ctaLabel}
             </a>
           </div>
 
           <div>
             <Image
-              src="/images/hero/hero-01.png"
+              src={mainContent.image || defaultMain.image!}
               alt="headphone"
               width={351}
               height={358}

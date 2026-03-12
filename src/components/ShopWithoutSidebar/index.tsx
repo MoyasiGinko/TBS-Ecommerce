@@ -4,20 +4,25 @@ import Breadcrumb from "../Common/Breadcrumb";
 
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
+import SkeletonLoader from "../Common/SkeletonLoader";
 import CustomSelect from "../ShopWithSidebar/CustomSelect";
 import { Product } from "@/types/product";
-import { fallbackProducts } from "@/lib/data/fallback";
 import { getProductsClient } from "@/lib/data/store";
 
 const ShopWithoutSidebar = () => {
   const [productStyle, setProductStyle] = useState("grid");
-  const [products, setProducts] = useState<Product[]>(fallbackProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     getProductsClient()
-      .then(setProducts)
-      .catch(() => {
-        setProducts(fallbackProducts);
+      .then((data) => {
+        setProducts(data);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load products:", err);
+        setIsLoading(false);
       });
   }, []);
 
@@ -45,7 +50,8 @@ const ShopWithoutSidebar = () => {
                     <CustomSelect options={options} />
 
                     <p>
-                      Showing <span className="text-dark">9 of 50</span>{" "}
+                      Showing{" "}
+                      <span className="text-dark">{products.length}</span>{" "}
                       Products
                     </p>
                   </div>
@@ -139,12 +145,16 @@ const ShopWithoutSidebar = () => {
                     : "flex flex-col gap-7.5"
                 }`}
               >
-                {products.map((item, key) =>
-                  productStyle === "grid" ? (
-                    <SingleGridItem item={item} key={key} />
-                  ) : (
-                    <SingleListItem item={item} key={key} />
-                  ),
+                {isLoading ? (
+                  <SkeletonLoader count={8} type="product-card" />
+                ) : (
+                  products.map((item, key) =>
+                    productStyle === "grid" ? (
+                      <SingleGridItem item={item} key={key} />
+                    ) : (
+                      <SingleListItem item={item} key={key} />
+                    ),
+                  )
                 )}
               </div>
               {/* <!-- Products Grid Tab Content End --> */}

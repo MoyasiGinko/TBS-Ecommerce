@@ -1,14 +1,19 @@
-import { useState } from 'react';
-import RangeSlider from 'react-range-slider-input';
-import 'react-range-slider-input/dist/style.css';
+import { useState } from "react";
+import RangeSlider from "react-range-slider-input";
+import "react-range-slider-input/dist/style.css";
 
-const PriceDropdown = () => {
+type PriceDropdownProps = {
+  min: number;
+  max: number;
+  value: {
+    from: number;
+    to: number;
+  };
+  onChange: (value: { from: number; to: number }) => void;
+};
+
+const PriceDropdown = ({ min, max, value, onChange }: PriceDropdownProps) => {
   const [toggleDropdown, setToggleDropdown] = useState(true);
-
-  const [selectedPrice, setSelectedPrice] = useState({
-    from: 0,
-    to: 100,
-  });
 
   return (
     <div className="bg-white shadow-1 rounded-lg">
@@ -18,11 +23,11 @@ const PriceDropdown = () => {
       >
         <p className="text-dark">Price</p>
         <button
-          onClick={() => setToggleDropdown(!toggleDropdown)}
+          type="button"
           id="price-dropdown-btn"
           aria-label="button for price dropdown"
           className={`text-dark ease-out duration-200 ${
-            toggleDropdown && 'rotate-180'
+            toggleDropdown && "rotate-180"
           }`}
         >
           <svg
@@ -44,15 +49,18 @@ const PriceDropdown = () => {
       </div>
 
       {/* // <!-- dropdown menu --> */}
-      <div className={`p-6 ${toggleDropdown ? 'block' : 'hidden'}`}>
+      <div className={`p-6 ${toggleDropdown ? "block" : "hidden"}`}>
         <div id="pricingOne">
           <div className="price-range">
             <RangeSlider
               id="range-slider-gradient"
               className="margin-lg"
-              step={'any'}
+              min={min}
+              max={max}
+              value={[value.from, value.to]}
+              step={"any"}
               onInput={(e) =>
-                setSelectedPrice({
+                onChange({
                   from: Math.floor(e[0]),
                   to: Math.ceil(e[1]),
                 })
@@ -65,7 +73,7 @@ const PriceDropdown = () => {
                   $
                 </span>
                 <span id="minAmount" className="block px-3 py-1.5">
-                  {selectedPrice.from}
+                  {value.from}
                 </span>
               </div>
 
@@ -74,7 +82,7 @@ const PriceDropdown = () => {
                   $
                 </span>
                 <span id="maxAmount" className="block px-3 py-1.5">
-                  {selectedPrice.to}
+                  {value.to}
                 </span>
               </div>
             </div>

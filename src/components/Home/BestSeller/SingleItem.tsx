@@ -6,6 +6,7 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import { updateQuickView } from "@/redux/features/quickView-slice";
 import { addItemToCart } from "@/redux/features/cart-slice";
+import { updateproductDetails } from "@/redux/features/product-details";
 import Image from "next/image";
 import Link from "next/link";
 import { addItemToWishlist } from "@/redux/features/wishlist-slice";
@@ -13,6 +14,10 @@ import { addItemToWishlist } from "@/redux/features/wishlist-slice";
 const SingleItem = ({ item }: { item: Product }) => {
   const { openModal } = useModalContext();
   const dispatch = useDispatch<AppDispatch>();
+  const productImage =
+    item.imgs?.previews?.[0] ||
+    item.imgs?.thumbnails?.[0] ||
+    "/images/products/product-1-bg-1.png";
 
   // update the QuickView state
   const handleQuickViewUpdate = () => {
@@ -25,7 +30,7 @@ const SingleItem = ({ item }: { item: Product }) => {
       addItemToCart({
         ...item,
         quantity: 1,
-      })
+      }),
     );
   };
 
@@ -35,8 +40,12 @@ const SingleItem = ({ item }: { item: Product }) => {
         ...item,
         status: "available",
         quantity: 1,
-      })
+      }),
     );
+  };
+
+  const handleProductDetails = () => {
+    dispatch(updateproductDetails({ ...item }));
   };
 
   return (
@@ -81,7 +90,12 @@ const SingleItem = ({ item }: { item: Product }) => {
           </div>
 
           <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5">
-            <Link href="/shop-details"> {item.title} </Link>
+            <Link
+              href={`/shop-details?id=${item.id}`}
+              onClick={handleProductDetails}
+            >
+              {item.title}
+            </Link>
           </h3>
 
           <span className="flex items-center justify-center gap-2 font-medium text-lg">
@@ -90,8 +104,14 @@ const SingleItem = ({ item }: { item: Product }) => {
           </span>
         </div>
 
-        <div className="flex justify-center items-center">
-          <Image src={item.imgs.previews[0]} alt="" width={280} height={280} />
+        <div className="flex justify-center items-center min-h-[220px] px-4 pb-6">
+          <Image
+            src={productImage}
+            alt={item.title}
+            width={280}
+            height={280}
+            className="h-[220px] w-[220px] object-contain"
+          />
         </div>
 
         <div className="absolute right-0 bottom-0 translate-x-full u-w-full flex flex-col gap-2 p-5.5 ease-linear duration-300 group-hover:translate-x-0">

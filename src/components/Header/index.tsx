@@ -1,6 +1,7 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import CustomSelect from "./CustomSelect";
 import { menuData } from "./menuData";
 import Dropdown from "./Dropdown";
@@ -9,11 +10,27 @@ import { useSelector } from "react-redux";
 import { selectTotalPrice } from "@/redux/features/cart-slice";
 import { useCartModalContext } from "@/app/context/CartSidebarModalContext";
 import Image from "next/image";
+import { getSiteContentMapClient } from "@/lib/data/siteContent";
+import { Menu } from "@/types/Menu";
+import { Product } from "@/types/product";
+import { BlogItem } from "@/types/blogItem";
+import { getBlogsClient, getProductsClient } from "@/lib/data/store";
+import { getCurrentProfile } from "@/lib/supabase/auth";
+import { UserProfile } from "@/types/user";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const Header = () => {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchType, setSearchType] = useState("products");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [blogs, setBlogs] = useState<BlogItem[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
+  const [headerMenu, setHeaderMenu] = useState<Menu[]>(menuData);
+  const searchRef = useRef<HTMLDivElement>(null);
   const { openCartModal } = useCartModalContext();
 
   const product = useAppSelector((state) => state.cartReducer.items);
@@ -34,18 +51,138 @@ const Header = () => {
 
   useEffect(() => {
     window.addEventListener("scroll", handleStickyMenu);
-  });
+    return () => window.removeEventListener("scroll", handleStickyMenu);
+  }, []);
 
-  const options = [
-    { label: "All Categories", value: "0" },
-    { label: "Desktop", value: "1" },
-    { label: "Laptop", value: "2" },
-    { label: "Monitor", value: "3" },
-    { label: "Phone", value: "4" },
-    { label: "Watch", value: "5" },
-    { label: "Mouse", value: "6" },
-    { label: "Tablet", value: "7" },
+  useEffect(() => {
+    const loadHeaderContent = async () => {
+      const contentMap = await getSiteContentMapClient();
+      const managedMenu = contentMap["header.menu"]?.items;
+      if (Array.isArray(managedMenu) && managedMenu.length) {
+        setHeaderMenu(managedMenu as Menu[]);
+      }
+    };
+
+    loadHeaderContent();
+  }, []);
+
+  useEffect(() => {
+    const loadSearchData = async () => {
+      try {
+        const [productData, blogData] = await Promise.all([
+          getProductsClient(),
+          getBlogsClient(),
+        ]);
+        setProducts(productData);
+        setBlogs(blogData);
+      } catch (error) {
+        console.error("Failed to load search data:", error);
+      }
+    };
+
+    loadSearchData();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (searchRef.current && !searchRef.current.contains(target)) {
+        setSearchOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncProfile = async () => {
+      const currentProfile = await getCurrentProfile();
+      setProfile(currentProfile);
+    };
+
+    syncProfile();
+
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      syncProfile();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const accountHref = profile ? "/my-account" : "/signin";
+  const accountDisplayName = profile
+    ? `${(profile.fullName || profile.email || "User").trim().slice(0, 6)}..`
+    : "Sign In";
+
+  const searchTypeOptions = [
+    { label: "Products", value: "products" },
+    { label: "Blogs", value: "blogs" },
   ];
+
+  const productSearchResults = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return [];
+
+    return products
+      .filter((item) => {
+        const inSearch = [
+          item.title,
+          item.category,
+          item.shortDescription,
+          item.brand,
+          item.model,
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+
+        return inSearch;
+      })
+      .slice(0, 6);
+  }, [products, searchQuery]);
+
+  const blogSearchResults = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return [];
+
+    return blogs
+      .filter((item) => {
+        const inSearch = [item.title, item.date]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+
+        return inSearch;
+      })
+      .slice(0, 6);
+  }, [blogs, searchQuery]);
+
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) return;
+
+    if (searchType === "blogs") {
+      const params = new URLSearchParams({ q: query });
+      router.push(`/blogs?${params.toString()}`);
+      setSearchOpen(false);
+      return;
+    }
+
+    const params = new URLSearchParams({ q: query });
+    router.push(`/shop-with-sidebar?${params.toString()}`);
+    setSearchOpen(false);
+  };
 
   return (
     <header
@@ -71,26 +208,39 @@ const Header = () => {
               />
             </Link>
 
-            <div className="max-w-[475px] w-full">
-              <form>
+            <div className="max-w-[475px] w-full" ref={searchRef}>
+              <form onSubmit={handleSearchSubmit}>
                 <div className="flex items-center">
-                  <CustomSelect options={options} />
+                  <CustomSelect
+                    options={searchTypeOptions}
+                    value={searchType}
+                    onChange={(option) => setSearchType(option.value)}
+                  />
 
                   <div className="relative max-w-[333px] sm:min-w-[333px] w-full">
                     {/* <!-- divider --> */}
                     <span className="absolute left-0 top-1/2 -translate-y-1/2 inline-block w-px h-5.5 bg-gray-4"></span>
                     <input
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onFocus={() => setSearchOpen(true)}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setSearchOpen(true);
+                      }}
                       value={searchQuery}
                       type="search"
                       name="search"
                       id="search"
-                      placeholder="I am shopping for..."
+                      placeholder={
+                        searchType === "blogs"
+                          ? "Search blog posts..."
+                          : "I am shopping for..."
+                      }
                       autoComplete="off"
                       className="custom-search w-full rounded-r-[5px] bg-gray-1 !border-l-0 border border-gray-3 py-2.5 pl-4 pr-10 outline-none ease-in duration-200"
                     />
 
                     <button
+                      type="submit"
                       id="search-btn"
                       aria-label="Search"
                       className="flex items-center justify-center absolute right-3 top-1/2 -translate-y-1/2 ease-in duration-200 hover:text-blue"
@@ -109,6 +259,110 @@ const Header = () => {
                         />
                       </svg>
                     </button>
+
+                    {searchOpen && searchQuery.trim() && (
+                      <div className="absolute top-full left-0 mt-2 z-50 w-full rounded-md border border-gray-3 bg-white shadow-1 overflow-hidden">
+                        {searchType === "products" &&
+                        productSearchResults.length ? (
+                          <ul>
+                            {productSearchResults.map((item) => {
+                              const itemImage =
+                                item.imgs?.thumbnails?.[0] ||
+                                item.imgs?.previews?.[0] ||
+                                "/images/products/product-1-bg-1.png";
+
+                              return (
+                                <li key={item.id}>
+                                  <Link
+                                    href={`/shop-details?id=${item.id}`}
+                                    onClick={() => setSearchOpen(false)}
+                                    className="flex items-center gap-3 px-3 py-2 hover:bg-gray-1 ease-out duration-200"
+                                  >
+                                    <Image
+                                      src={itemImage}
+                                      alt={item.title}
+                                      width={44}
+                                      height={44}
+                                      className="h-11 w-11 object-contain rounded border border-gray-3 bg-white"
+                                    />
+                                    <span className="flex-1 min-w-0">
+                                      <span className="block text-custom-sm text-dark truncate">
+                                        {item.title}
+                                      </span>
+                                      <span className="block text-2xs text-dark-4 truncate">
+                                        {item.category} · $
+                                        {item.discountedPrice}
+                                      </span>
+                                    </span>
+                                  </Link>
+                                </li>
+                              );
+                            })}
+
+                            <li className="border-t border-gray-3">
+                              <button
+                                type="submit"
+                                className="w-full text-left px-3 py-2 text-custom-sm text-blue hover:bg-gray-1"
+                              >
+                                View all results for &quot;{searchQuery.trim()}
+                                &quot;
+                              </button>
+                            </li>
+                          </ul>
+                        ) : searchType === "blogs" &&
+                          blogSearchResults.length ? (
+                          <ul>
+                            {blogSearchResults.map((item, index) => {
+                              const blogImage =
+                                item.img || "/images/blog/blog-01.jpg";
+
+                              return (
+                                <li key={`${item.title}-${index}`}>
+                                  <Link
+                                    href="/blogs/blog-details"
+                                    onClick={() => setSearchOpen(false)}
+                                    className="flex items-center gap-3 px-3 py-2 hover:bg-gray-1 ease-out duration-200"
+                                  >
+                                    <Image
+                                      src={blogImage}
+                                      alt={item.title}
+                                      width={44}
+                                      height={44}
+                                      className="h-11 w-11 object-cover rounded border border-gray-3 bg-white"
+                                    />
+                                    <span className="flex-1 min-w-0">
+                                      <span className="block text-custom-sm text-dark truncate">
+                                        {item.title}
+                                      </span>
+                                      <span className="block text-2xs text-dark-4 truncate">
+                                        {item.date} · {item.views} views
+                                      </span>
+                                    </span>
+                                  </Link>
+                                </li>
+                              );
+                            })}
+
+                            <li className="border-t border-gray-3">
+                              <button
+                                type="submit"
+                                className="w-full text-left px-3 py-2 text-custom-sm text-blue hover:bg-gray-1"
+                              >
+                                View all blog results for &quot;
+                                {searchQuery.trim()}
+                                &quot;
+                              </button>
+                            </li>
+                          </ul>
+                        ) : (
+                          <div className="px-3 py-3 text-custom-sm text-dark-4">
+                            {searchType === "blogs"
+                              ? "No matching blog posts found."
+                              : "No matching products found."}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </form>
@@ -158,7 +412,7 @@ const Header = () => {
 
             <div className="flex w-full lg:w-auto justify-between items-center gap-5">
               <div className="flex items-center gap-5">
-                <Link href="/signin" className="flex items-center gap-2.5">
+                <Link href={accountHref} className="flex items-center gap-2.5">
                   <svg
                     width="24"
                     height="24"
@@ -185,7 +439,7 @@ const Header = () => {
                       account
                     </span>
                     <p className="font-medium text-custom-sm text-dark">
-                      Sign In
+                      {accountDisplayName}
                     </p>
                   </div>
                 </Link>
@@ -302,7 +556,7 @@ const Header = () => {
               {/* <!-- Main Nav Start --> */}
               <nav>
                 <ul className="flex xl:items-center flex-col xl:flex-row gap-5 xl:gap-6">
-                  {menuData.map((menuItem, i) =>
+                  {headerMenu.map((menuItem, i) =>
                     menuItem.submenu ? (
                       <Dropdown
                         key={i}

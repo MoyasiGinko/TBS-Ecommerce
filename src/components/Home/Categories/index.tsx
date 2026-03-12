@@ -3,7 +3,6 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { useCallback, useRef, useEffect, useState } from "react";
 import Image from "next/image";
 import { Category } from "@/types/category";
-import { fallbackCategories } from "@/lib/data/fallback";
 import { getCategoriesClient } from "@/lib/data/store";
 
 // Import Swiper styles
@@ -13,7 +12,8 @@ import SingleItem from "./SingleItem";
 
 const Categories = () => {
   const sliderRef = useRef(null);
-  const [categories, setCategories] = useState<Category[]>(fallbackCategories);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const handlePrev = useCallback(() => {
     if (!sliderRef.current) return;
@@ -31,9 +31,13 @@ const Categories = () => {
     }
 
     getCategoriesClient()
-      .then(setCategories)
-      .catch(() => {
-        setCategories(fallbackCategories);
+      .then((data) => {
+        setCategories(data);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load categories:", err);
+        setIsLoading(false);
       });
   }, []);
 
@@ -143,11 +147,22 @@ const Categories = () => {
               },
             }}
           >
-            {categories.map((item, key) => (
-              <SwiperSlide key={key}>
-                <SingleItem item={item} />
-              </SwiperSlide>
-            ))}
+            {isLoading ? (
+              <div className="flex gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="animate-pulse flex-shrink-0">
+                    <div className="bg-gray-3 rounded-full h-32 w-32 mb-3" />
+                    <div className="h-4 bg-gray-3 rounded w-24 mx-auto" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              categories.map((item, key) => (
+                <SwiperSlide key={key}>
+                  <SingleItem item={item} />
+                </SwiperSlide>
+              ))
+            )}
           </Swiper>
         </div>
       </div>

@@ -19,7 +19,7 @@ const SingleItem = ({ item }) => {
       addItemToCart({
         ...item,
         quantity: 1,
-      })
+      }),
     );
   };
 
@@ -57,7 +57,17 @@ const SingleItem = ({ item }) => {
         <div className="flex items-center justify-between gap-5">
           <div className="w-full flex items-center gap-5.5">
             <div className="flex items-center justify-center rounded-[5px] bg-gray-2 max-w-[80px] w-full h-17.5">
-              <Image src={item.imgs?.thumbnails[0]} alt="product" width={200} height={200} />
+              <Image
+                src={
+                  item.imgs?.thumbnails?.[0] ||
+                  item.imgs?.previews?.[0] ||
+                  "/images/products/product-1-bg-1.png"
+                }
+                alt={item.title}
+                width={80}
+                height={80}
+                className="h-14 w-14 object-contain"
+              />
             </div>
 
             <div>

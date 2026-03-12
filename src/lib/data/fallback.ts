@@ -1,16 +1,80 @@
 import { BlogItem } from "@/types/blogItem";
 import { Category } from "@/types/category";
-import { Product } from "@/types/product";
+import { emptyProduct, Product } from "@/types/product";
 import { Testimonial } from "@/types/testimonial";
 import { Order } from "@/types/order";
 
+const defaultDetails = {
+  rating: 4.7,
+  category: "Electronics",
+  shortDescription:
+    "A premium product sourced from the catalog with live pricing, gallery images, and configurable options.",
+  description:
+    "This product is managed in the database and displayed consistently across the storefront, quick actions, and the product details page.",
+  availability: "In Stock",
+  badge: "SALE 20% OFF",
+  promoText: "Sales 30% Off Use Code: PROMO30",
+  brand: "TBS",
+  model: "Standard",
+  colors: ["#ef4444", "#3b82f6", "#f97316", "#ec4899"],
+  highlights: ["Free delivery available", "Sales 30% Off Use Code: PROMO30"],
+  specificationSummary:
+    "Built for daily use with dependable performance, quality materials, and storefront-ready merchandising content.",
+  careInstructions:
+    "Handle with care, keep dry, and follow the included maintenance guidance to preserve finish and performance.",
+  additionalInformation: [
+    { label: "Brand", value: "TBS" },
+    { label: "Model", value: "Standard" },
+    { label: "Category", value: "Electronics" },
+  ],
+  optionsGroup1: [
+    { id: "standard", title: "Standard" },
+    { id: "premium", title: "Premium" },
+  ],
+  optionsGroup2: [
+    { id: "regular", title: "Regular" },
+    { id: "deluxe", title: "Deluxe" },
+  ],
+  optionsGroup3: [
+    { id: "default", title: "Default" },
+    { id: "plus", title: "Plus" },
+  ],
+};
+
+const createFallbackProduct = (
+  product: Partial<Product> & {
+    id: number;
+    title: string;
+    reviews: number;
+    price: number;
+    discountedPrice: number;
+    imgs: Product["imgs"];
+  },
+): Product => ({
+  ...emptyProduct,
+  ...defaultDetails,
+  ...product,
+  model: product.title,
+  additionalInformation: [
+    { label: "Brand", value: product.brand || defaultDetails.brand },
+    { label: "Model", value: product.title },
+    { label: "Category", value: product.category || defaultDetails.category },
+  ],
+  imgs: {
+    thumbnails: product.imgs?.thumbnails || [],
+    previews: product.imgs?.previews || [],
+  },
+});
+
 export const fallbackProducts: Product[] = [
-  {
+  createFallbackProduct({
     title: "Havit HV-G69 USB Gamepad",
     reviews: 15,
     price: 59.0,
     discountedPrice: 29.0,
     id: 1,
+    brand: "Havit",
+    category: "Gaming Accessories",
     imgs: {
       thumbnails: [
         "/images/products/product-1-sm-1.png",
@@ -21,13 +85,29 @@ export const fallbackProducts: Product[] = [
         "/images/products/product-1-bg-2.png",
       ],
     },
-  },
-  {
+  }),
+  createFallbackProduct({
     title: "iPhone 14 Plus , 6/128GB",
     reviews: 5,
+    rating: 4.9,
     price: 899.0,
     discountedPrice: 99.0,
     id: 2,
+    brand: "Apple",
+    category: "Smartphones",
+    optionsGroup1: [
+      { id: "128gb", title: "128 GB" },
+      { id: "256gb", title: "256 GB" },
+      { id: "512gb", title: "512 GB" },
+    ],
+    optionsGroup2: [
+      { id: "active", title: "Active" },
+      { id: "inactive", title: "Inactive" },
+    ],
+    optionsGroup3: [
+      { id: "dual", title: "Dual" },
+      { id: "e-sim", title: "E Sim" },
+    ],
     imgs: {
       thumbnails: [
         "/images/products/product-2-sm-1.png",
@@ -38,13 +118,15 @@ export const fallbackProducts: Product[] = [
         "/images/products/product-2-bg-2.png",
       ],
     },
-  },
-  {
+  }),
+  createFallbackProduct({
     title: "Apple iMac M1 24-inch 2021",
     reviews: 5,
     price: 59.0,
     discountedPrice: 29.0,
     id: 3,
+    brand: "Apple",
+    category: "Desktop Computers",
     imgs: {
       thumbnails: [
         "/images/products/product-3-sm-1.png",
@@ -55,13 +137,15 @@ export const fallbackProducts: Product[] = [
         "/images/products/product-3-bg-2.png",
       ],
     },
-  },
-  {
+  }),
+  createFallbackProduct({
     title: "MacBook Air M1 chip, 8/256GB",
     reviews: 6,
     price: 59.0,
     discountedPrice: 29.0,
     id: 4,
+    brand: "Apple",
+    category: "Laptops",
     imgs: {
       thumbnails: [
         "/images/products/product-4-sm-1.png",
@@ -72,13 +156,15 @@ export const fallbackProducts: Product[] = [
         "/images/products/product-4-bg-2.png",
       ],
     },
-  },
-  {
+  }),
+  createFallbackProduct({
     title: "Apple Watch Ultra",
     reviews: 3,
     price: 99.0,
     discountedPrice: 29.0,
     id: 5,
+    brand: "Apple",
+    category: "Wearables",
     imgs: {
       thumbnails: [
         "/images/products/product-5-sm-1.png",
@@ -89,13 +175,15 @@ export const fallbackProducts: Product[] = [
         "/images/products/product-5-bg-2.png",
       ],
     },
-  },
-  {
+  }),
+  createFallbackProduct({
     title: "Logitech MX Master 3 Mouse",
     reviews: 15,
     price: 59.0,
     discountedPrice: 29.0,
     id: 6,
+    brand: "Logitech",
+    category: "Accessories",
     imgs: {
       thumbnails: [
         "/images/products/product-6-sm-1.png",
@@ -106,13 +194,15 @@ export const fallbackProducts: Product[] = [
         "/images/products/product-6-bg-2.png",
       ],
     },
-  },
-  {
+  }),
+  createFallbackProduct({
     title: "Apple iPad Air 5th Gen - 64GB",
     reviews: 15,
     price: 59.0,
     discountedPrice: 29.0,
     id: 7,
+    brand: "Apple",
+    category: "Tablets",
     imgs: {
       thumbnails: [
         "/images/products/product-7-sm-1.png",
@@ -123,13 +213,15 @@ export const fallbackProducts: Product[] = [
         "/images/products/product-7-bg-2.png",
       ],
     },
-  },
-  {
+  }),
+  createFallbackProduct({
     title: "Asus RT Dual Band Router",
     reviews: 15,
     price: 59.0,
     discountedPrice: 29.0,
     id: 8,
+    brand: "Asus",
+    category: "Networking",
     imgs: {
       thumbnails: [
         "/images/products/product-8-sm-1.png",
@@ -140,7 +232,7 @@ export const fallbackProducts: Product[] = [
         "/images/products/product-8-bg-2.png",
       ],
     },
-  },
+  }),
 ];
 
 export const fallbackBlogs: BlogItem[] = [

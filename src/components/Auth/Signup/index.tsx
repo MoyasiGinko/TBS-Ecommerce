@@ -1,10 +1,12 @@
 "use client";
 import Breadcrumb from "@/components/Common/Breadcrumb";
 import Link from "next/link";
-import React, { FormEvent, useState } from "react";
-import { signUpWithEmail } from "@/lib/supabase/auth";
+import React, { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getCurrentProfile, signUpWithEmail } from "@/lib/supabase/auth";
 
 const Signup = () => {
+  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -12,6 +14,29 @@ const Signup = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const redirectIfAuthenticated = async () => {
+      const profile = await getCurrentProfile();
+      if (!isMounted) return;
+
+      if (profile) {
+        router.replace("/my-account");
+        return;
+      }
+
+      setIsCheckingSession(false);
+    };
+
+    redirectIfAuthenticated();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -44,6 +69,21 @@ const Signup = () => {
     setPassword("");
     setConfirmPassword("");
   };
+
+  if (isCheckingSession) {
+    return (
+      <>
+        <Breadcrumb title={"Signup"} pages={["Signup"]} />
+        <section className="overflow-hidden py-20 bg-gray-2">
+          <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
+            <div className="max-w-[570px] w-full mx-auto rounded-xl bg-white shadow-1 p-6 sm:p-8 xl:p-11 text-center">
+              <p>Checking your session...</p>
+            </div>
+          </div>
+        </section>
+      </>
+    );
+  }
 
   return (
     <>
