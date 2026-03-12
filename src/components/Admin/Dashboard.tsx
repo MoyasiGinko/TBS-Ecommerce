@@ -77,7 +77,8 @@ type EnumGroupKey =
   | "optionsGroup2"
   | "optionsGroup3"
   | "colors"
-  | "gender";
+  | "gender"
+  | "availability";
 
 type ProductDetailEnumRow = {
   id: number;
@@ -208,7 +209,7 @@ const defaultProductDetails = (): ProductDetailsForm => ({
   category: "General",
   shortDescription: "",
   description: "",
-  availability: "In Stock",
+  availability: "",
   badge: "",
   promoText: "",
   brand: "",
@@ -258,7 +259,7 @@ const fromProductDetails = (
     category: String(details?.category || ""),
     shortDescription: String(details?.shortDescription || ""),
     description: String(details?.description || ""),
-    availability: String(details?.availability || "In Stock"),
+    availability: String(details?.availability || ""),
     badge: String(details?.badge || ""),
     promoText: String(details?.promoText || ""),
     brand: String(details?.brand || ""),
@@ -365,8 +366,8 @@ const AdminDashboard = () => {
     reviews: 0,
     price: 0,
     discounted_price: 0,
-    thumbnails: "",
-    previews: "",
+    thumbnails: [""] as string[],
+    previews: [""] as string[],
     details: defaultProductDetails(),
   });
 
@@ -380,7 +381,12 @@ const AdminDashboard = () => {
     optionsGroup3: "",
     colors: "",
     gender: "",
+    availability: "",
   });
+  const [enumStatus, setEnumStatus] = useState<{
+    type: "success" | "error";
+    msg: string;
+  } | null>(null);
 
   const [newBlog, setNewBlog] = useState({
     title: "",
@@ -435,6 +441,13 @@ const AdminDashboard = () => {
 
   const [editingId, setEditingId] = useState<string>("");
   const [editingDraft, setEditingDraft] = useState<Record<string, any>>({});
+  const [productWorkspaceMode, setProductWorkspaceMode] = useState<
+    "list" | "add"
+  >("list");
+  const [addProductStatus, setAddProductStatus] = useState<{
+    type: "success" | "error";
+    msg: string;
+  } | null>(null);
 
   const toArray = (value: string) =>
     value
@@ -544,12 +557,16 @@ const AdminDashboard = () => {
     loadAll();
   }, [loadAll]);
 
-  const saveAction = async (action: () => Promise<void>) => {
+  const saveAction = async (
+    action: () => Promise<void>,
+    options?: { onSuccess?: () => void },
+  ) => {
     setIsSaving(true);
     setMessage("");
     try {
       await action();
       await loadAll();
+      options?.onSuccess?.();
     } catch (error: any) {
       setMessage(error?.message || "Operation failed");
     } finally {
@@ -651,6 +668,7 @@ const AdminDashboard = () => {
     { key: "optionsGroup3", label: "Option Group 3" },
     { key: "colors", label: "Colors" },
     { key: "gender", label: "Gender" },
+    { key: "availability", label: "Availability" },
   ];
 
   const toOptionObjects = (group: EnumGroupKey, selectedIds: string[]) => {
@@ -702,6 +720,17 @@ const AdminDashboard = () => {
       })
       .filter((item) => item.label && item.value),
   });
+
+  const selectedLabels = (group: EnumGroupKey, selectedIds: string[]) => {
+    const byId = new Map(
+      selectOptions(group).map((item) => [item.option_id, item.option_title]),
+    );
+    return selectedIds.map((id) => byId.get(id) || id).filter(Boolean);
+  };
+
+  const addPreviewGallery = newProduct.previews.filter(Boolean).length
+    ? newProduct.previews.filter(Boolean)
+    : newProduct.thumbnails.filter(Boolean);
 
   const renderPager = (tab: AdminTab, totalPages: number) => (
     <div className="mt-4 flex items-center gap-2">
@@ -880,734 +909,1404 @@ const AdminDashboard = () => {
 
       {activeTab === "products" && (
         <div className={sectionCardClass}>
-          <h3 className="font-medium text-lg mb-3">
-            Products ({products.length})
-          </h3>
-
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 mb-4">
-            <input
-              className={inputClass}
-              placeholder="Title"
-              value={newProduct.title}
-              onChange={(e) =>
-                setNewProduct((v) => ({ ...v, title: e.target.value }))
-              }
-            />
-            <input
-              className={inputClass}
-              type="number"
-              placeholder="Reviews"
-              value={newProduct.reviews}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  reviews: Number(e.target.value),
-                }))
-              }
-            />
-            <input
-              className={inputClass}
-              type="number"
-              placeholder="Price"
-              value={newProduct.price}
-              onChange={(e) =>
-                setNewProduct((v) => ({ ...v, price: Number(e.target.value) }))
-              }
-            />
-            <input
-              className={inputClass}
-              type="number"
-              placeholder="Discounted Price"
-              value={newProduct.discounted_price}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  discounted_price: Number(e.target.value),
-                }))
-              }
-            />
-            <input
-              className={inputClass}
-              placeholder="Thumbnails comma separated"
-              value={newProduct.thumbnails}
-              onChange={(e) =>
-                setNewProduct((v) => ({ ...v, thumbnails: e.target.value }))
-              }
-            />
-            <input
-              className={inputClass}
-              placeholder="Previews comma separated"
-              value={newProduct.previews}
-              onChange={(e) =>
-                setNewProduct((v) => ({ ...v, previews: e.target.value }))
-              }
-            />
-
-            <input
-              className={inputClass}
-              type="number"
-              step="0.1"
-              placeholder="Rating"
-              value={newProduct.details.rating}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: { ...v.details, rating: Number(e.target.value) },
-                }))
-              }
-            />
-            <select
-              className={inputClass}
-              value={newProduct.details.category}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: { ...v.details, category: e.target.value },
-                }))
-              }
-            >
-              {!newProduct.details.category ? (
-                <option value="">Select category</option>
-              ) : null}
-              {categories.map((category) => (
-                <option key={category.id} value={category.title}>
-                  {category.title}
-                </option>
-              ))}
-            </select>
-            <input
-              className={inputClass}
-              placeholder="Availability"
-              value={newProduct.details.availability}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: { ...v.details, availability: e.target.value },
-                }))
-              }
-            />
-            <input
-              className={inputClass}
-              placeholder="Brand"
-              value={newProduct.details.brand}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: { ...v.details, brand: e.target.value },
-                }))
-              }
-            />
-            <input
-              className={inputClass}
-              placeholder="Model / SKU"
-              value={newProduct.details.model}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: { ...v.details, model: e.target.value },
-                }))
-              }
-            />
-            <input
-              className={inputClass}
-              placeholder="Badge"
-              value={newProduct.details.badge}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: { ...v.details, badge: e.target.value },
-                }))
-              }
-            />
-            <input
-              className={inputClass}
-              placeholder="Promo text"
-              value={newProduct.details.promoText}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: { ...v.details, promoText: e.target.value },
-                }))
-              }
-            />
-            <input
-              className={inputClass}
-              placeholder="Highlights comma separated"
-              value={newProduct.details.highlights}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: { ...v.details, highlights: e.target.value },
-                }))
-              }
-            />
-            <CheckedMultiSelect
-              label="Colors"
-              value={newProduct.details.colors}
-              options={selectOptions("colors").map((item) => ({
-                id: item.option_id,
-                title: item.option_title,
-              }))}
-              onChange={(nextValue) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: { ...v.details, colors: nextValue },
-                }))
-              }
-            />
-            <CheckedMultiSelect
-              label="Gender"
-              value={newProduct.details.gender}
-              options={selectOptions("gender").map((item) => ({
-                id: item.option_id,
-                title: item.option_title,
-              }))}
-              onChange={(nextValue) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: { ...v.details, gender: nextValue },
-                }))
-              }
-            />
-
-            {optionGroups.map((group) => (
-              <CheckedMultiSelect
-                key={`new-${group.key}`}
-                label={group.label}
-                value={newProduct.details[group.key]}
-                options={selectOptions(group.key).map((item) => ({
-                  id: item.option_id,
-                  title: item.option_title,
-                }))}
-                onChange={(nextValue) =>
-                  setNewProduct((v) => ({
-                    ...v,
-                    details: {
-                      ...v.details,
-                      [group.key]: nextValue,
-                    },
-                  }))
-                }
-              />
-            ))}
-
-            <textarea
-              className={`${inputClass} md:col-span-2 min-h-[92px]`}
-              placeholder="Short description"
-              value={newProduct.details.shortDescription}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: { ...v.details, shortDescription: e.target.value },
-                }))
-              }
-            />
-            <textarea
-              className={`${inputClass} md:col-span-2 min-h-[92px]`}
-              placeholder="Long description"
-              value={newProduct.details.description}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: { ...v.details, description: e.target.value },
-                }))
-              }
-            />
-            <textarea
-              className={`${inputClass} md:col-span-2 min-h-[92px]`}
-              placeholder="Specification summary"
-              value={newProduct.details.specificationSummary}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: {
-                    ...v.details,
-                    specificationSummary: e.target.value,
-                  },
-                }))
-              }
-            />
-            <textarea
-              className={`${inputClass} md:col-span-2 min-h-[92px]`}
-              placeholder="Care instructions"
-              value={newProduct.details.careInstructions}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: { ...v.details, careInstructions: e.target.value },
-                }))
-              }
-            />
-            <textarea
-              className={`${inputClass} md:col-span-2 min-h-[110px]`}
-              placeholder="Specifications / additional info (one per line: Label: Value)"
-              value={newProduct.details.additionalInformation}
-              onChange={(e) =>
-                setNewProduct((v) => ({
-                  ...v,
-                  details: {
-                    ...v.details,
-                    additionalInformation: e.target.value,
-                  },
-                }))
-              }
-            />
-          </div>
-          <button
-            disabled={isSaving}
-            className={`${primaryBtnClass} mb-4`}
-            onClick={() =>
-              saveAction(async () => {
-                if (!supabase) return;
-                const { error } = await supabase.from("products").insert({
-                  title: newProduct.title,
-                  reviews: newProduct.reviews,
-                  price: newProduct.price,
-                  discounted_price: newProduct.discounted_price,
-                  thumbnails: toArray(newProduct.thumbnails),
-                  previews: toArray(newProduct.previews),
-                  details: buildProductDetailsPayload(newProduct.details),
-                });
-                if (error) throw error;
-                setNewProduct({
-                  title: "",
-                  reviews: 0,
-                  price: 0,
-                  discounted_price: 0,
-                  thumbnails: "",
-                  previews: "",
-                  details: defaultProductDetails(),
-                });
-              })
-            }
-          >
-            Add product
-          </button>
-
-          <input
-            className={`${inputClass} mb-4`}
-            placeholder="Search products"
-            value={search.products}
-            onChange={(e) => handleSearch("products", e.target.value)}
-          />
-
-          <div className="space-y-2">
-            {productsPg.pageItems.map((p) => (
-              <div
-                key={p.id}
-                className="rounded-xl border border-gray-3 bg-white p-3 sm:p-4 flex items-center justify-between gap-3"
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h3 className="font-medium text-lg">
+              Products ({products.length})
+            </h3>
+            <div className="flex items-center gap-2">
+              <button
+                className={`px-3 py-2 rounded-md border text-sm ${
+                  productWorkspaceMode === "list"
+                    ? "bg-blue text-white border-blue"
+                    : "bg-white border-gray-3 text-dark"
+                }`}
+                onClick={() => setProductWorkspaceMode("list")}
               >
-                {editingId === `product-${p.id}` ? (
-                  <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <input
-                      className={inputClass}
-                      value={editingDraft.title || ""}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          title: e.target.value,
-                        }))
-                      }
-                    />
-                    <input
-                      className={inputClass}
-                      type="number"
-                      value={editingDraft.reviews || 0}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          reviews: Number(e.target.value),
-                        }))
-                      }
-                    />
-                    <input
-                      className={inputClass}
-                      type="number"
-                      value={editingDraft.price || 0}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          price: Number(e.target.value),
-                        }))
-                      }
-                    />
-                    <input
-                      className={inputClass}
-                      type="number"
-                      value={editingDraft.discounted_price || 0}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          discounted_price: Number(e.target.value),
-                        }))
-                      }
-                    />
-                    <input
-                      className={inputClass}
-                      placeholder="Thumbnails comma separated"
-                      value={(editingDraft.thumbnails || []).join(", ")}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          thumbnails: toArray(e.target.value),
-                        }))
-                      }
-                    />
-                    <input
-                      className={inputClass}
-                      placeholder="Previews comma separated"
-                      value={(editingDraft.previews || []).join(", ")}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          previews: toArray(e.target.value),
-                        }))
-                      }
-                    />
-                    <input
-                      className={inputClass}
-                      type="number"
-                      step="0.1"
-                      placeholder="Rating"
-                      value={editingDraft.details?.rating || 0}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            rating: Number(e.target.value),
-                          },
-                        }))
-                      }
-                    />
-                    <select
-                      className={inputClass}
-                      value={editingDraft.details?.category || ""}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            category: e.target.value,
-                          },
-                        }))
-                      }
-                    >
-                      {editingDraft.details?.category &&
-                      !categories.some(
-                        (category) =>
-                          category.title === editingDraft.details?.category,
-                      ) ? (
-                        <option value={editingDraft.details?.category}>
-                          {editingDraft.details?.category}
-                        </option>
-                      ) : null}
-                      {!editingDraft.details?.category ? (
-                        <option value="">Select category</option>
-                      ) : null}
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.title}>
-                          {category.title}
-                        </option>
-                      ))}
-                    </select>
-                    <textarea
-                      className={`${inputClass} md:col-span-2 min-h-[92px]`}
-                      placeholder="Short description"
-                      value={editingDraft.details?.shortDescription || ""}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            shortDescription: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <textarea
-                      className={`${inputClass} md:col-span-2 min-h-[92px]`}
-                      placeholder="Long description"
-                      value={editingDraft.details?.description || ""}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            description: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className={inputClass}
-                      placeholder="Availability"
-                      value={editingDraft.details?.availability || ""}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            availability: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className={inputClass}
-                      placeholder="Brand"
-                      value={editingDraft.details?.brand || ""}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            brand: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className={inputClass}
-                      placeholder="Model / SKU"
-                      value={editingDraft.details?.model || ""}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            model: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className={inputClass}
-                      placeholder="Badge"
-                      value={editingDraft.details?.badge || ""}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            badge: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className={inputClass}
-                      placeholder="Promo text"
-                      value={editingDraft.details?.promoText || ""}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            promoText: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      className={inputClass}
-                      placeholder="Highlights comma separated"
-                      value={editingDraft.details?.highlights || ""}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            highlights: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <CheckedMultiSelect
-                      label="Colors"
-                      value={editingDraft.details?.colors || []}
-                      options={selectOptions("colors").map((item) => ({
-                        id: item.option_id,
-                        title: item.option_title,
-                      }))}
-                      onChange={(nextValue) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            colors: nextValue,
-                          },
-                        }))
-                      }
-                    />
-                    <CheckedMultiSelect
-                      label="Gender"
-                      value={editingDraft.details?.gender || []}
-                      options={selectOptions("gender").map((item) => ({
-                        id: item.option_id,
-                        title: item.option_title,
-                      }))}
-                      onChange={(nextValue) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            gender: nextValue,
-                          },
-                        }))
-                      }
-                    />
+                Product List
+              </button>
+              <button
+                className={`px-3 py-2 rounded-md border text-sm ${
+                  productWorkspaceMode === "add"
+                    ? "bg-blue text-white border-blue"
+                    : "bg-white border-gray-3 text-dark"
+                }`}
+                onClick={() => setProductWorkspaceMode("add")}
+              >
+                Add Product Workspace
+              </button>
+            </div>
+          </div>
 
-                    {optionGroups.map((group) => (
-                      <CheckedMultiSelect
-                        key={`edit-${p.id}-${group.key}`}
-                        label={group.label}
-                        value={editingDraft.details?.[group.key] || []}
-                        options={selectOptions(group.key).map((item) => ({
-                          id: item.option_id,
-                          title: item.option_title,
-                        }))}
-                        onChange={(nextValue) =>
-                          setEditingDraft((d) => ({
-                            ...d,
-                            details: {
-                              ...(d.details || {}),
-                              [group.key]: nextValue,
-                            },
-                          }))
-                        }
+          {productWorkspaceMode === "add" && (
+            <div className="space-y-5">
+              {/* Status banner */}
+              {addProductStatus && (
+                <div
+                  className={`rounded-xl border px-4 py-3 text-sm font-medium ${
+                    addProductStatus.type === "success"
+                      ? "border-green/30 bg-green/10 text-green"
+                      : "border-red/30 bg-red/10 text-red"
+                  }`}
+                >
+                  {addProductStatus.msg}
+                </div>
+              )}
+
+              <div className="rounded-2xl border border-gray-3 bg-gray-1/50 p-3 sm:p-4">
+                <p className="text-sm text-dark-4">
+                  Live preview mirrors the Shop Details layout. Fields marked{" "}
+                  <span className="text-red font-medium">*</span> are required.
+                </p>
+              </div>
+
+              {/* Live preview */}
+              <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,520px)_minmax(0,1fr)] gap-6">
+                {/* Image panel */}
+                <div className="rounded-2xl border border-gray-3 bg-white p-4">
+                  <p className="text-xs font-medium text-dark-4 mb-3 uppercase tracking-wide">
+                    Image Preview
+                  </p>
+                  <div className="relative rounded-lg shadow-1 bg-gray-2 p-4 sm:p-7.5 min-h-[300px] flex items-center justify-center">
+                    {addPreviewGallery[0] ? (
+                      <Image
+                        src={addPreviewGallery[0]}
+                        alt={newProduct.title || "Product preview"}
+                        width={340}
+                        height={340}
+                        className="object-contain max-h-[280px]"
                       />
-                    ))}
-                    <textarea
-                      className={`${inputClass} md:col-span-2 min-h-[92px]`}
-                      placeholder="Specification summary"
-                      value={editingDraft.details?.specificationSummary || ""}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            specificationSummary: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <textarea
-                      className={`${inputClass} md:col-span-2 min-h-[92px]`}
-                      placeholder="Care instructions"
-                      value={editingDraft.details?.careInstructions || ""}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            careInstructions: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <textarea
-                      className={`${inputClass} md:col-span-2 min-h-[110px]`}
-                      placeholder="Specifications / additional info (one per line: Label: Value)"
-                      value={editingDraft.details?.additionalInformation || ""}
-                      onChange={(e) =>
-                        setEditingDraft((d) => ({
-                          ...d,
-                          details: {
-                            ...(d.details || {}),
-                            additionalInformation: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        className={primaryBtnClass}
-                        onClick={() =>
-                          saveAction(async () => {
-                            if (!supabase) return;
-                            const { error } = await supabase
-                              .from("products")
-                              .update({
-                                title: editingDraft.title,
-                                reviews: editingDraft.reviews,
-                                price: editingDraft.price,
-                                discounted_price: editingDraft.discounted_price,
-                                thumbnails: editingDraft.thumbnails || [],
-                                previews: editingDraft.previews || [],
-                                details: buildProductDetailsPayload(
-                                  editingDraft.details ||
-                                    defaultProductDetails(),
-                                ),
-                              })
-                              .eq("id", p.id);
-                            if (error) throw error;
-                            cancelEdit();
-                          })
-                        }
-                      >
-                        Save
-                      </button>
-                      <button
-                        className={secondaryBtnClass}
-                        onClick={cancelEdit}
-                      >
-                        Cancel
-                      </button>
-                    </div>
+                    ) : (
+                      <p className="text-dark-4 text-sm text-center px-4">
+                        Add image URLs below to see a preview
+                      </p>
+                    )}
                   </div>
-                ) : (
-                  <>
-                    <div>
-                      <p className="font-medium">{p.title}</p>
-                      <p className="text-sm">
-                        ${p.discounted_price} / ${p.price}
+                  {addPreviewGallery.length > 0 && (
+                    <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+                      {addPreviewGallery
+                        .filter(Boolean)
+                        .slice(0, 6)
+                        .map((image, index) => (
+                          <div
+                            key={`${image}-${index}`}
+                            className={`flex-shrink-0 rounded-lg border p-1.5 bg-white ${
+                              index === 0 ? "border-blue" : "border-gray-3"
+                            }`}
+                          >
+                            <Image
+                              src={image}
+                              alt={`Preview ${index + 1}`}
+                              width={60}
+                              height={60}
+                              className="h-14 w-14 object-contain"
+                            />
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Info panel */}
+                <div className="rounded-2xl border border-gray-3 bg-white p-5 space-y-3 overflow-y-auto max-h-[520px]">
+                  <p className="text-xs font-medium text-dark-4 uppercase tracking-wide">
+                    Product Preview
+                  </p>
+
+                  <div className="flex flex-wrap gap-2">
+                    {newProduct.details.badge && (
+                      <span className="inline-flex rounded-full bg-green px-3 py-1 text-xs font-medium text-white">
+                        {newProduct.details.badge}
+                      </span>
+                    )}
+                    {newProduct.details.promoText && (
+                      <span className="inline-flex rounded-full bg-blue/10 px-3 py-1 text-xs font-medium text-blue">
+                        {newProduct.details.promoText}
+                      </span>
+                    )}
+                  </div>
+
+                  <h4 className="font-semibold text-xl text-dark leading-snug">
+                    {newProduct.title || (
+                      <span className="text-dark-4 font-normal">
+                        Product title will appear here
+                      </span>
+                    )}
+                  </h4>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-yellow-500 text-sm">
+                      {"★".repeat(
+                        Math.round(Math.min(5, newProduct.details.rating)),
+                      )}
+                      {"☆".repeat(
+                        5 - Math.round(Math.min(5, newProduct.details.rating)),
+                      )}
+                    </span>
+                    <span className="text-sm text-dark-4">
+                      {newProduct.details.rating.toFixed(1)} / 5.0
+                    </span>
+                    {newProduct.reviews > 0 && (
+                      <span className="text-sm text-dark-4">
+                        ({newProduct.reviews} reviews)
+                      </span>
+                    )}
+                    {newProduct.details.availability ? (
+                      <span
+                        className={`inline-flex items-center gap-1.5 text-sm font-medium ${
+                          newProduct.details.availability === "In Stock"
+                            ? "text-green"
+                            : "text-orange-400"
+                        }`}
+                      >
+                        <span className="inline-block h-2 w-2 rounded-full bg-current" />
+                        {newProduct.details.availability}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-dark-4">
+                        <span className="inline-block h-2 w-2 rounded-full bg-gray-3" />
+                        Availability not set
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-end gap-3">
+                    <span className="font-semibold text-dark text-2xl">
+                      ${newProduct.discounted_price || 0}
+                    </span>
+                    {!!newProduct.price &&
+                      newProduct.price !== newProduct.discounted_price && (
+                        <span className="font-medium text-dark-4 text-base line-through">
+                          ${newProduct.price}
+                        </span>
+                      )}
+                    {!!newProduct.price &&
+                      newProduct.discounted_price > 0 &&
+                      newProduct.discounted_price < newProduct.price && (
+                        <span className="text-sm font-semibold text-green">
+                          {Math.round(
+                            (1 -
+                              newProduct.discounted_price / newProduct.price) *
+                              100,
+                          )}
+                          % off
+                        </span>
+                      )}
+                  </div>
+
+                  {newProduct.details.shortDescription && (
+                    <p className="text-dark-3 text-sm leading-relaxed">
+                      {newProduct.details.shortDescription}
+                    </p>
+                  )}
+
+                  {newProduct.details.highlights && (
+                    <ul className="flex flex-col gap-1.5">
+                      {newProduct.details.highlights
+                        .split(",")
+                        .map((h) => h.trim())
+                        .filter(Boolean)
+                        .slice(0, 6)
+                        .map((highlight) => (
+                          <li
+                            key={highlight}
+                            className="text-sm text-dark flex items-start gap-2"
+                          >
+                            <span className="mt-0.5 inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-blue/10 text-blue text-xs">
+                              ✓
+                            </span>
+                            {highlight}
+                          </li>
+                        ))}
+                    </ul>
+                  )}
+
+                  <div className="space-y-2 border-t border-gray-3 pt-3 text-sm">
+                    {newProduct.details.category && (
+                      <p className="text-dark">
+                        <span className="font-medium">Category:</span>{" "}
+                        {newProduct.details.category}
                       </p>
-                      <p className="text-xs text-dark-4 mt-1">
-                        {p.details?.category || "Uncategorized"}
+                    )}
+                    {newProduct.details.brand && (
+                      <p className="text-dark">
+                        <span className="font-medium">Brand:</span>{" "}
+                        {newProduct.details.brand}
                       </p>
-                      <div className="mt-2 flex gap-2">
-                        {(p.thumbnails || []).slice(0, 3).map((img, idx) => (
-                          <Image
-                            key={`${p.id}-thumb-${idx}`}
-                            src={img}
-                            alt={p.title}
-                            className="h-10 w-10 rounded border border-gray-3 object-cover"
-                            width={40}
-                            height={40}
-                          />
+                    )}
+                    {newProduct.details.model && (
+                      <p className="text-dark">
+                        <span className="font-medium">Model / SKU:</span>{" "}
+                        {newProduct.details.model}
+                      </p>
+                    )}
+                    {newProduct.details.colors.length > 0 && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-dark">Colors:</span>
+                        {selectedLabels(
+                          "colors",
+                          newProduct.details.colors,
+                        ).map((label) => (
+                          <span
+                            key={label}
+                            className="inline-flex items-center gap-1 rounded-full border border-gray-3 bg-gray-1 px-2 py-0.5 text-xs"
+                          >
+                            {label.startsWith("#") && (
+                              <span
+                                className="inline-block h-3 w-3 flex-shrink-0 rounded-full border border-gray-3"
+                                style={{ backgroundColor: label }}
+                              />
+                            )}
+                            {label}
+                          </span>
                         ))}
                       </div>
+                    )}
+                    {newProduct.details.gender.length > 0 && (
+                      <p className="text-dark">
+                        <span className="font-medium">Gender:</span>{" "}
+                        {selectedLabels(
+                          "gender",
+                          newProduct.details.gender,
+                        ).join(", ")}
+                      </p>
+                    )}
+                    {optionGroups.map((group) =>
+                      newProduct.details[group.key].length > 0 ? (
+                        <p key={`preview-${group.key}`} className="text-dark">
+                          <span className="font-medium">{group.label}:</span>{" "}
+                          {selectedLabels(
+                            group.key,
+                            newProduct.details[group.key],
+                          ).join(", ")}
+                        </p>
+                      ) : null,
+                    )}
+                  </div>
+
+                  {newProduct.details.description && (
+                    <div className="border-t border-gray-3 pt-3">
+                      <p className="text-sm font-medium text-dark mb-1">
+                        Description
+                      </p>
+                      <p className="text-sm text-dark-3 leading-relaxed whitespace-pre-line">
+                        {newProduct.details.description}
+                      </p>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        className={primaryBtnClass}
-                        onClick={() => startEdit(`product-${p.id}`, p)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="inline-flex items-center justify-center rounded-xl bg-red px-3 py-2 text-sm font-medium text-white"
-                        onClick={() =>
-                          saveAction(async () => {
-                            if (!supabase) return;
-                            const { error } = await supabase
-                              .from("products")
-                              .delete()
-                              .eq("id", p.id);
-                            if (error) throw error;
-                          })
-                        }
-                      >
-                        Delete
-                      </button>
+                  )}
+
+                  {newProduct.details.specificationSummary && (
+                    <div className="border-t border-gray-3 pt-3">
+                      <p className="text-sm font-medium text-dark mb-1">
+                        Specification Summary
+                      </p>
+                      <p className="text-sm text-dark-3 leading-relaxed whitespace-pre-line">
+                        {newProduct.details.specificationSummary}
+                      </p>
                     </div>
-                  </>
-                )}
+                  )}
+
+                  {newProduct.details.careInstructions && (
+                    <div className="border-t border-gray-3 pt-3">
+                      <p className="text-sm font-medium text-dark mb-1">
+                        Care Instructions
+                      </p>
+                      <p className="text-sm text-dark-3 leading-relaxed whitespace-pre-line">
+                        {newProduct.details.careInstructions}
+                      </p>
+                    </div>
+                  )}
+
+                  {newProduct.details.additionalInformation && (
+                    <div className="border-t border-gray-3 pt-3">
+                      <p className="text-sm font-medium text-dark mb-2">
+                        Specifications
+                      </p>
+                      <div className="space-y-1">
+                        {newProduct.details.additionalInformation
+                          .split("\n")
+                          .map((line) => line.trim())
+                          .filter(Boolean)
+                          .map((line, i) => {
+                            const colonIdx = line.indexOf(":");
+                            if (colonIdx === -1) return null;
+                            const label = line.slice(0, colonIdx).trim();
+                            const val = line.slice(colonIdx + 1).trim();
+                            return label && val ? (
+                              <div key={i} className="flex gap-2 text-sm">
+                                <span className="font-medium text-dark min-w-[90px] flex-shrink-0">
+                                  {label}
+                                </span>
+                                <span className="text-dark-3">{val}</span>
+                              </div>
+                            ) : null;
+                          })}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
-          {renderPager("products", productsPg.totalPages)}
+
+              {/* Form fields */}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {/* Title */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-dark">
+                    Title <span className="text-red">*</span>
+                  </label>
+                  <input
+                    className={inputClass}
+                    placeholder="e.g. Apple iPhone 15 Pro Max"
+                    value={newProduct.title}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({ ...v, title: e.target.value }))
+                    }
+                  />
+                </div>
+
+                {/* Reviews */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-dark">
+                    Number of Reviews
+                  </label>
+                  <input
+                    className={inputClass}
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 128"
+                    value={newProduct.reviews || ""}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        reviews: Math.max(0, Number(e.target.value)),
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Price */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-dark">
+                    Original Price ($) <span className="text-red">*</span>
+                  </label>
+                  <input
+                    className={inputClass}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="e.g. 1299.99"
+                    value={newProduct.price || ""}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        price: Math.max(0, Number(e.target.value)),
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Discounted Price */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-dark">
+                    Discounted Price ($)
+                  </label>
+                  <input
+                    className={inputClass}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="e.g. 999.99"
+                    value={newProduct.discounted_price || ""}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        discounted_price: Math.max(0, Number(e.target.value)),
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Rating */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-dark">
+                    Rating (0 – 5)
+                  </label>
+                  <input
+                    className={inputClass}
+                    type="number"
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    placeholder="e.g. 4.7"
+                    value={newProduct.details.rating || ""}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        details: {
+                          ...v.details,
+                          rating: Math.min(
+                            5,
+                            Math.max(0, Number(e.target.value)),
+                          ),
+                        },
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Category */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-dark">
+                    Category
+                  </label>
+                  <select
+                    className={inputClass}
+                    value={newProduct.details.category}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        details: { ...v.details, category: e.target.value },
+                      }))
+                    }
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.title}>
+                        {category.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Availability */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-dark">
+                    Availability
+                  </label>
+                  <select
+                    className={inputClass}
+                    value={newProduct.details.availability}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        details: { ...v.details, availability: e.target.value },
+                      }))
+                    }
+                  >
+                    <option value="">Select availability</option>
+                    {selectOptions("availability").map((item) => (
+                      <option key={item.id} value={item.option_title}>
+                        {item.option_title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Brand */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-dark">
+                    Brand
+                  </label>
+                  <input
+                    className={inputClass}
+                    placeholder="e.g. Apple, Samsung, Nike"
+                    value={newProduct.details.brand}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        details: { ...v.details, brand: e.target.value },
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Model / SKU */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-dark">
+                    Model / SKU
+                  </label>
+                  <input
+                    className={inputClass}
+                    placeholder="e.g. A2897 or SKU-00123"
+                    value={newProduct.details.model}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        details: { ...v.details, model: e.target.value },
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Badge */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-dark">
+                    Badge Label
+                  </label>
+                  <input
+                    className={inputClass}
+                    placeholder="e.g. New Arrival, Best Seller, Sale"
+                    value={newProduct.details.badge}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        details: { ...v.details, badge: e.target.value },
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Promo Text */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-dark">
+                    Promo Text
+                  </label>
+                  <input
+                    className={inputClass}
+                    placeholder="e.g. Free shipping on orders over $50"
+                    value={newProduct.details.promoText}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        details: { ...v.details, promoText: e.target.value },
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Highlights */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-dark">
+                    Highlights
+                    <span className="ml-1 text-xs text-dark-4 font-normal">
+                      (comma-separated)
+                    </span>
+                  </label>
+                  <input
+                    className={inputClass}
+                    placeholder="e.g. 5G Ready, 48MP Camera, 4K Video"
+                    value={newProduct.details.highlights}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        details: { ...v.details, highlights: e.target.value },
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Colors */}
+                <CheckedMultiSelect
+                  label="Colors"
+                  value={newProduct.details.colors}
+                  options={selectOptions("colors").map((item) => ({
+                    id: item.option_id,
+                    title: item.option_title,
+                  }))}
+                  onChange={(nextValue) =>
+                    setNewProduct((v) => ({
+                      ...v,
+                      details: { ...v.details, colors: nextValue },
+                    }))
+                  }
+                />
+
+                {/* Gender */}
+                <CheckedMultiSelect
+                  label="Gender"
+                  value={newProduct.details.gender}
+                  options={selectOptions("gender").map((item) => ({
+                    id: item.option_id,
+                    title: item.option_title,
+                  }))}
+                  onChange={(nextValue) =>
+                    setNewProduct((v) => ({
+                      ...v,
+                      details: { ...v.details, gender: nextValue },
+                    }))
+                  }
+                />
+
+                {/* Option Groups */}
+                {optionGroups.map((group) => (
+                  <CheckedMultiSelect
+                    key={`new-${group.key}`}
+                    label={group.label}
+                    value={newProduct.details[group.key]}
+                    options={selectOptions(group.key).map((item) => ({
+                      id: item.option_id,
+                      title: item.option_title,
+                    }))}
+                    onChange={(nextValue) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        details: { ...v.details, [group.key]: nextValue },
+                      }))
+                    }
+                  />
+                ))}
+
+                {/* Short Description */}
+                <div className="space-y-1 md:col-span-2">
+                  <label className="block text-sm font-medium text-dark">
+                    Short Description
+                  </label>
+                  <textarea
+                    className={`${inputClass} min-h-[80px]`}
+                    placeholder="Brief product summary shown in listings (1–2 sentences)"
+                    value={newProduct.details.shortDescription}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        details: {
+                          ...v.details,
+                          shortDescription: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Full Description */}
+                <div className="space-y-1 md:col-span-2">
+                  <label className="block text-sm font-medium text-dark">
+                    Full Description
+                  </label>
+                  <textarea
+                    className={`${inputClass} min-h-[110px]`}
+                    placeholder="Detailed product description shown on the product page"
+                    value={newProduct.details.description}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        details: { ...v.details, description: e.target.value },
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Specification Summary */}
+                <div className="space-y-1 md:col-span-2">
+                  <label className="block text-sm font-medium text-dark">
+                    Specification Summary
+                  </label>
+                  <textarea
+                    className={`${inputClass} min-h-[80px]`}
+                    placeholder="Key specs overview, e.g. OS: iOS 17 | Storage: 256GB | RAM: 8GB"
+                    value={newProduct.details.specificationSummary}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        details: {
+                          ...v.details,
+                          specificationSummary: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Care Instructions */}
+                <div className="space-y-1 md:col-span-2">
+                  <label className="block text-sm font-medium text-dark">
+                    Care Instructions
+                  </label>
+                  <textarea
+                    className={`${inputClass} min-h-[80px]`}
+                    placeholder="e.g. Machine wash cold, Do not tumble dry"
+                    value={newProduct.details.careInstructions}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        details: {
+                          ...v.details,
+                          careInstructions: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Additional Information */}
+                <div className="space-y-1 md:col-span-2">
+                  <label className="block text-sm font-medium text-dark">
+                    Additional Specifications
+                    <span className="ml-1 text-xs text-dark-4 font-normal">
+                      (one per line: Label: Value)
+                    </span>
+                  </label>
+                  <textarea
+                    className={`${inputClass} min-h-[110px]`}
+                    placeholder={
+                      "Weight: 265g\nDimensions: 159.9 × 76.7 × 8.25 mm\nBattery: 4685 mAh"
+                    }
+                    value={newProduct.details.additionalInformation}
+                    onChange={(e) =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        details: {
+                          ...v.details,
+                          additionalInformation: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Thumbnails — dynamic multi-input */}
+                <div className="space-y-2 md:col-span-2">
+                  <label className="block text-sm font-medium text-dark">
+                    Thumbnail Images
+                    <span className="ml-1 text-xs text-dark-4 font-normal">
+                      (small images used in product listings)
+                    </span>
+                  </label>
+                  {newProduct.thumbnails.map((url, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        className={inputClass}
+                        placeholder={`Thumbnail URL ${idx + 1}`}
+                        value={url}
+                        onChange={(e) => {
+                          const next = [...newProduct.thumbnails];
+                          next[idx] = e.target.value;
+                          setNewProduct((v) => ({ ...v, thumbnails: next }));
+                        }}
+                      />
+                      {url && (
+                        <div className="flex-shrink-0 h-9 w-9 rounded-lg border border-gray-3 bg-gray-1 overflow-hidden">
+                          <Image
+                            src={url}
+                            alt=""
+                            width={36}
+                            height={36}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      )}
+                      {newProduct.thumbnails.length > 1 && (
+                        <button
+                          type="button"
+                          className="flex-shrink-0 rounded-lg border border-red/40 bg-red/5 px-2 py-1.5 text-xs text-red hover:bg-red hover:text-white transition"
+                          onClick={() =>
+                            setNewProduct((v) => ({
+                              ...v,
+                              thumbnails: v.thumbnails.filter(
+                                (_, i) => i !== idx,
+                              ),
+                            }))
+                          }
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className={secondaryBtnClass}
+                    onClick={() =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        thumbnails: [...v.thumbnails, ""],
+                      }))
+                    }
+                  >
+                    + Add Thumbnail
+                  </button>
+                </div>
+
+                {/* Previews — dynamic multi-input */}
+                <div className="space-y-2 md:col-span-2">
+                  <label className="block text-sm font-medium text-dark">
+                    Preview Images
+                    <span className="ml-1 text-xs text-dark-4 font-normal">
+                      (full-size images shown on the product detail page)
+                    </span>
+                  </label>
+                  {newProduct.previews.map((url, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        className={inputClass}
+                        placeholder={`Preview URL ${idx + 1}`}
+                        value={url}
+                        onChange={(e) => {
+                          const next = [...newProduct.previews];
+                          next[idx] = e.target.value;
+                          setNewProduct((v) => ({ ...v, previews: next }));
+                        }}
+                      />
+                      {url && (
+                        <div className="flex-shrink-0 h-9 w-9 rounded-lg border border-gray-3 bg-gray-1 overflow-hidden">
+                          <Image
+                            src={url}
+                            alt=""
+                            width={36}
+                            height={36}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      )}
+                      {newProduct.previews.length > 1 && (
+                        <button
+                          type="button"
+                          className="flex-shrink-0 rounded-lg border border-red/40 bg-red/5 px-2 py-1.5 text-xs text-red hover:bg-red hover:text-white transition"
+                          onClick={() =>
+                            setNewProduct((v) => ({
+                              ...v,
+                              previews: v.previews.filter((_, i) => i !== idx),
+                            }))
+                          }
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className={secondaryBtnClass}
+                    onClick={() =>
+                      setNewProduct((v) => ({
+                        ...v,
+                        previews: [...v.previews, ""],
+                      }))
+                    }
+                  >
+                    + Add Preview Image
+                  </button>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-3">
+                <button
+                  disabled={isSaving}
+                  className={primaryBtnClass}
+                  onClick={async () => {
+                    setAddProductStatus(null);
+                    // Field validation
+                    if (!newProduct.title.trim()) {
+                      setAddProductStatus({
+                        type: "error",
+                        msg: "Product title is required.",
+                      });
+                      return;
+                    }
+                    if (!newProduct.price || newProduct.price <= 0) {
+                      setAddProductStatus({
+                        type: "error",
+                        msg: "Original price must be greater than 0.",
+                      });
+                      return;
+                    }
+                    if (
+                      newProduct.discounted_price > 0 &&
+                      newProduct.discounted_price > newProduct.price
+                    ) {
+                      setAddProductStatus({
+                        type: "error",
+                        msg: "Discounted price cannot be higher than the original price.",
+                      });
+                      return;
+                    }
+                    // Duplicate check
+                    const duplicate = products.find(
+                      (p) =>
+                        p.title.trim().toLowerCase() ===
+                        newProduct.title.trim().toLowerCase(),
+                    );
+                    if (duplicate) {
+                      setAddProductStatus({
+                        type: "error",
+                        msg: `A product named "${duplicate.title}" already exists. Use a unique title.`,
+                      });
+                      return;
+                    }
+                    await saveAction(async () => {
+                      if (!supabase) return;
+                      const { error } = await supabase.from("products").insert({
+                        title: newProduct.title.trim(),
+                        reviews: newProduct.reviews,
+                        price: newProduct.price,
+                        discounted_price:
+                          newProduct.discounted_price || newProduct.price,
+                        thumbnails: newProduct.thumbnails.filter(Boolean),
+                        previews: newProduct.previews.filter(Boolean),
+                        details: buildProductDetailsPayload(newProduct.details),
+                      });
+                      if (error) throw error;
+                      setNewProduct({
+                        title: "",
+                        reviews: 0,
+                        price: 0,
+                        discounted_price: 0,
+                        thumbnails: [""],
+                        previews: [""],
+                        details: defaultProductDetails(),
+                      });
+                      setAddProductStatus({
+                        type: "success",
+                        msg: "Product added successfully! You can add another or go back to the list.",
+                      });
+                    });
+                  }}
+                >
+                  {isSaving ? "Adding…" : "Add Product"}
+                </button>
+                <button
+                  className={secondaryBtnClass}
+                  onClick={() => {
+                    setProductWorkspaceMode("list");
+                    setAddProductStatus(null);
+                  }}
+                >
+                  Back to List
+                </button>
+              </div>
+            </div>
+          )}
+
+          {productWorkspaceMode === "list" && (
+            <>
+              <input
+                className={`${inputClass} mb-4`}
+                placeholder="Search products"
+                value={search.products}
+                onChange={(e) => handleSearch("products", e.target.value)}
+              />
+
+              <div className="space-y-2">
+                {productsPg.pageItems.map((p) => (
+                  <div
+                    key={p.id}
+                    className="rounded-xl border border-gray-3 bg-white p-3 sm:p-4 flex items-center justify-between gap-3"
+                  >
+                    {editingId === `product-${p.id}` ? (
+                      <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <input
+                          className={inputClass}
+                          value={editingDraft.title || ""}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              title: e.target.value,
+                            }))
+                          }
+                        />
+                        <input
+                          className={inputClass}
+                          type="number"
+                          value={editingDraft.reviews || 0}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              reviews: Number(e.target.value),
+                            }))
+                          }
+                        />
+                        <input
+                          className={inputClass}
+                          type="number"
+                          value={editingDraft.price || 0}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              price: Number(e.target.value),
+                            }))
+                          }
+                        />
+                        <input
+                          className={inputClass}
+                          type="number"
+                          value={editingDraft.discounted_price || 0}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              discounted_price: Number(e.target.value),
+                            }))
+                          }
+                        />
+                        <input
+                          className={inputClass}
+                          placeholder="Thumbnails comma separated"
+                          value={(editingDraft.thumbnails || []).join(", ")}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              thumbnails: toArray(e.target.value),
+                            }))
+                          }
+                        />
+                        <input
+                          className={inputClass}
+                          placeholder="Previews comma separated"
+                          value={(editingDraft.previews || []).join(", ")}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              previews: toArray(e.target.value),
+                            }))
+                          }
+                        />
+                        <input
+                          className={inputClass}
+                          type="number"
+                          step="0.1"
+                          placeholder="Rating"
+                          value={editingDraft.details?.rating || 0}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              details: {
+                                ...(d.details || {}),
+                                rating: Number(e.target.value),
+                              },
+                            }))
+                          }
+                        />
+                        <select
+                          className={inputClass}
+                          value={editingDraft.details?.category || ""}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              details: {
+                                ...(d.details || {}),
+                                category: e.target.value,
+                              },
+                            }))
+                          }
+                        >
+                          {editingDraft.details?.category &&
+                          !categories.some(
+                            (category) =>
+                              category.title === editingDraft.details?.category,
+                          ) ? (
+                            <option value={editingDraft.details?.category}>
+                              {editingDraft.details?.category}
+                            </option>
+                          ) : null}
+                          {!editingDraft.details?.category ? (
+                            <option value="">Select category</option>
+                          ) : null}
+                          {categories.map((category) => (
+                            <option key={category.id} value={category.title}>
+                              {category.title}
+                            </option>
+                          ))}
+                        </select>
+                        <textarea
+                          className={`${inputClass} md:col-span-2 min-h-[92px]`}
+                          placeholder="Short description"
+                          value={editingDraft.details?.shortDescription || ""}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              details: {
+                                ...(d.details || {}),
+                                shortDescription: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                        <textarea
+                          className={`${inputClass} md:col-span-2 min-h-[92px]`}
+                          placeholder="Long description"
+                          value={editingDraft.details?.description || ""}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              details: {
+                                ...(d.details || {}),
+                                description: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                        <select
+                          className={inputClass}
+                          value={editingDraft.details?.availability || ""}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              details: {
+                                ...(d.details || {}),
+                                availability: e.target.value,
+                              },
+                            }))
+                          }
+                        >
+                          <option value="">Select availability</option>
+                          {selectOptions("availability").map((item) => (
+                            <option key={item.id} value={item.option_title}>
+                              {item.option_title}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          className={inputClass}
+                          placeholder="Brand"
+                          value={editingDraft.details?.brand || ""}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              details: {
+                                ...(d.details || {}),
+                                brand: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                        <input
+                          className={inputClass}
+                          placeholder="Model / SKU"
+                          value={editingDraft.details?.model || ""}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              details: {
+                                ...(d.details || {}),
+                                model: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                        <input
+                          className={inputClass}
+                          placeholder="Badge"
+                          value={editingDraft.details?.badge || ""}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              details: {
+                                ...(d.details || {}),
+                                badge: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                        <input
+                          className={inputClass}
+                          placeholder="Promo text"
+                          value={editingDraft.details?.promoText || ""}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              details: {
+                                ...(d.details || {}),
+                                promoText: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                        <input
+                          className={inputClass}
+                          placeholder="Highlights comma separated"
+                          value={editingDraft.details?.highlights || ""}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              details: {
+                                ...(d.details || {}),
+                                highlights: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                        <CheckedMultiSelect
+                          label="Colors"
+                          value={editingDraft.details?.colors || []}
+                          options={selectOptions("colors").map((item) => ({
+                            id: item.option_id,
+                            title: item.option_title,
+                          }))}
+                          onChange={(nextValue) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              details: {
+                                ...(d.details || {}),
+                                colors: nextValue,
+                              },
+                            }))
+                          }
+                        />
+                        <CheckedMultiSelect
+                          label="Gender"
+                          value={editingDraft.details?.gender || []}
+                          options={selectOptions("gender").map((item) => ({
+                            id: item.option_id,
+                            title: item.option_title,
+                          }))}
+                          onChange={(nextValue) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              details: {
+                                ...(d.details || {}),
+                                gender: nextValue,
+                              },
+                            }))
+                          }
+                        />
+
+                        {optionGroups.map((group) => (
+                          <CheckedMultiSelect
+                            key={`edit-${p.id}-${group.key}`}
+                            label={group.label}
+                            value={editingDraft.details?.[group.key] || []}
+                            options={selectOptions(group.key).map((item) => ({
+                              id: item.option_id,
+                              title: item.option_title,
+                            }))}
+                            onChange={(nextValue) =>
+                              setEditingDraft((d) => ({
+                                ...d,
+                                details: {
+                                  ...(d.details || {}),
+                                  [group.key]: nextValue,
+                                },
+                              }))
+                            }
+                          />
+                        ))}
+                        <textarea
+                          className={`${inputClass} md:col-span-2 min-h-[92px]`}
+                          placeholder="Specification summary"
+                          value={
+                            editingDraft.details?.specificationSummary || ""
+                          }
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              details: {
+                                ...(d.details || {}),
+                                specificationSummary: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                        <textarea
+                          className={`${inputClass} md:col-span-2 min-h-[92px]`}
+                          placeholder="Care instructions"
+                          value={editingDraft.details?.careInstructions || ""}
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              details: {
+                                ...(d.details || {}),
+                                careInstructions: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                        <textarea
+                          className={`${inputClass} md:col-span-2 min-h-[110px]`}
+                          placeholder="Specifications / additional info (one per line: Label: Value)"
+                          value={
+                            editingDraft.details?.additionalInformation || ""
+                          }
+                          onChange={(e) =>
+                            setEditingDraft((d) => ({
+                              ...d,
+                              details: {
+                                ...(d.details || {}),
+                                additionalInformation: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            className={primaryBtnClass}
+                            onClick={() =>
+                              saveAction(async () => {
+                                if (!supabase) return;
+                                const { error } = await supabase
+                                  .from("products")
+                                  .update({
+                                    title: editingDraft.title,
+                                    reviews: editingDraft.reviews,
+                                    price: editingDraft.price,
+                                    discounted_price:
+                                      editingDraft.discounted_price,
+                                    thumbnails: editingDraft.thumbnails || [],
+                                    previews: editingDraft.previews || [],
+                                    details: buildProductDetailsPayload(
+                                      editingDraft.details ||
+                                        defaultProductDetails(),
+                                    ),
+                                  })
+                                  .eq("id", p.id);
+                                if (error) throw error;
+                                cancelEdit();
+                              })
+                            }
+                          >
+                            Save
+                          </button>
+                          <button
+                            className={secondaryBtnClass}
+                            onClick={cancelEdit}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <p className="font-medium">{p.title}</p>
+                          <p className="text-sm">
+                            ${p.discounted_price} / ${p.price}
+                          </p>
+                          <p className="text-xs text-dark-4 mt-1">
+                            {p.details?.category || "Uncategorized"}
+                          </p>
+                          <div className="mt-2 flex gap-2">
+                            {(p.thumbnails || [])
+                              .slice(0, 3)
+                              .map((img, idx) => (
+                                <Image
+                                  key={`${p.id}-thumb-${idx}`}
+                                  src={img}
+                                  alt={p.title}
+                                  className="h-10 w-10 rounded border border-gray-3 object-cover"
+                                  width={40}
+                                  height={40}
+                                />
+                              ))}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            className={primaryBtnClass}
+                            onClick={() => startEdit(`product-${p.id}`, p)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="inline-flex items-center justify-center rounded-xl bg-red px-3 py-2 text-sm font-medium text-white"
+                            onClick={() =>
+                              saveAction(async () => {
+                                if (!supabase) return;
+                                const { error } = await supabase
+                                  .from("products")
+                                  .delete()
+                                  .eq("id", p.id);
+                                if (error) throw error;
+                              })
+                            }
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {renderPager("products", productsPg.totalPages)}
+            </>
+          )}
         </div>
       )}
 
@@ -1616,6 +2315,18 @@ const AdminDashboard = () => {
           <h3 className="font-medium text-lg mb-3">
             Product Detail Enum Options ({productDetailEnums.length})
           </h3>
+
+          {enumStatus ? (
+            <div
+              className={`mb-4 rounded-xl border px-4 py-3 text-sm font-medium ${
+                enumStatus.type === "success"
+                  ? "border-green/30 bg-green/10 text-green"
+                  : "border-red/30 bg-red/10 text-red"
+              }`}
+            >
+              {enumStatus.msg}
+            </div>
+          ) : null}
 
           <input
             className={`${inputClass} mb-4`}
@@ -1651,16 +2362,48 @@ const AdminDashboard = () => {
                           </p>
                           <button
                             className="text-xs rounded-md border border-red px-2 py-1 text-red hover:bg-red hover:text-white"
-                            onClick={() =>
-                              saveAction(async () => {
-                                if (!supabase) return;
-                                const { error } = await supabase
-                                  .from("product_detail_enums")
-                                  .delete()
-                                  .eq("id", item.id);
-                                if (error) throw error;
-                              })
-                            }
+                            disabled={isSaving}
+                            onClick={() => {
+                              void (async () => {
+                                if (!supabase) {
+                                  setEnumStatus({
+                                    type: "error",
+                                    msg: "Supabase env is missing. Check .env.local.",
+                                  });
+                                  return;
+                                }
+
+                                setIsSaving(true);
+                                setMessage("");
+                                setEnumStatus(null);
+
+                                try {
+                                  const { error } = await supabase
+                                    .from("product_detail_enums")
+                                    .delete()
+                                    .eq("id", item.id);
+
+                                  if (error) throw error;
+
+                                  setProductDetailEnums((prev) =>
+                                    prev.filter((row) => row.id !== item.id),
+                                  );
+                                  setEnumStatus({
+                                    type: "success",
+                                    msg: `Removed "${item.option_title}" from ${group.label}.`,
+                                  });
+                                } catch (error: any) {
+                                  setEnumStatus({
+                                    type: "error",
+                                    msg:
+                                      error?.message ||
+                                      "Failed to remove enum option.",
+                                  });
+                                } finally {
+                                  setIsSaving(false);
+                                }
+                              })();
+                            }}
                           >
                             Remove
                           </button>
@@ -1676,37 +2419,122 @@ const AdminDashboard = () => {
                       className={inputClass}
                       placeholder={`Add ${group.label} option`}
                       value={newEnumOptionByGroup[group.key]}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        setEnumStatus(null);
                         setNewEnumOptionByGroup((prev) => ({
                           ...prev,
                           [group.key]: e.target.value,
-                        }))
-                      }
+                        }));
+                      }}
                     />
                     <button
                       className={primaryBtnClass}
                       disabled={isSaving}
-                      onClick={() =>
-                        saveAction(async () => {
-                          if (!supabase) return;
-                          const optionTitle =
-                            newEnumOptionByGroup[group.key].trim();
-                          if (!optionTitle) return;
-                          const optionId = cleanEnumOptionId(optionTitle);
-                          const { error } = await supabase
-                            .from("product_detail_enums")
-                            .insert({
-                              enum_group: group.key,
-                              option_id: optionId,
-                              option_title: optionTitle,
+                      onClick={() => {
+                        const optionTitle =
+                          newEnumOptionByGroup[group.key].trim();
+                        const optionId = cleanEnumOptionId(optionTitle);
+                        const duplicateOption = productDetailEnums.find(
+                          (item) =>
+                            item.enum_group === group.key &&
+                            (item.option_id === optionId ||
+                              item.option_title.trim().toLowerCase() ===
+                                optionTitle.toLowerCase()),
+                        );
+
+                        if (!optionTitle) {
+                          setEnumStatus({
+                            type: "error",
+                            msg: `Enter a ${group.label.toLowerCase()} option before saving.`,
+                          });
+                          return;
+                        }
+
+                        if (!optionId) {
+                          setEnumStatus({
+                            type: "error",
+                            msg: `${group.label} option must include letters or numbers.`,
+                          });
+                          return;
+                        }
+
+                        if (duplicateOption) {
+                          setEnumStatus({
+                            type: "error",
+                            msg: `"${optionTitle}" already exists in ${group.label}.`,
+                          });
+                          return;
+                        }
+
+                        void (async () => {
+                          if (!supabase) {
+                            setEnumStatus({
+                              type: "error",
+                              msg: "Supabase env is missing. Check .env.local.",
                             });
-                          if (error) throw error;
-                          setNewEnumOptionByGroup((prev) => ({
-                            ...prev,
-                            [group.key]: "",
-                          }));
-                        })
-                      }
+                            return;
+                          }
+
+                          setIsSaving(true);
+                          setMessage("");
+                          setEnumStatus(null);
+
+                          try {
+                            const { data, error } = await supabase
+                              .from("product_detail_enums")
+                              .insert({
+                                enum_group: group.key,
+                                option_id: optionId,
+                                option_title: optionTitle,
+                              })
+                              .select(
+                                "id,enum_group,option_id,option_title,sort_order",
+                              )
+                              .single();
+
+                            if (error) throw error;
+
+                            if (data) {
+                              setProductDetailEnums((prev) =>
+                                [...prev, data as ProductDetailEnumRow].sort(
+                                  (left, right) => {
+                                    const groupOrder =
+                                      left.enum_group.localeCompare(
+                                        right.enum_group,
+                                      );
+                                    if (groupOrder !== 0) return groupOrder;
+
+                                    const sortOrder =
+                                      left.sort_order - right.sort_order;
+                                    if (sortOrder !== 0) return sortOrder;
+
+                                    return left.option_title.localeCompare(
+                                      right.option_title,
+                                    );
+                                  },
+                                ),
+                              );
+                            }
+
+                            setNewEnumOptionByGroup((prev) => ({
+                              ...prev,
+                              [group.key]: "",
+                            }));
+                            setEnumStatus({
+                              type: "success",
+                              msg: `Added "${optionTitle}" to ${group.label}.`,
+                            });
+                          } catch (error: any) {
+                            setEnumStatus({
+                              type: "error",
+                              msg:
+                                error?.message || "Failed to add enum option.",
+                            });
+                          } finally {
+                            setIsSaving(false);
+                          }
+                        })();
+                      }}
                     >
                       Add
                     </button>
