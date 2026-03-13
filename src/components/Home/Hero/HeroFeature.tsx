@@ -52,7 +52,10 @@ const HeroFeature = () => {
     <div className="max-w-[1060px] w-full mx-auto px-4 sm:px-8 xl:px-0">
       <div className="flex flex-wrap items-center gap-7.5 xl:gap-12.5 mt-10">
         {features.map((item, key) => (
-          <div className="flex items-center gap-4" key={key}>
+          <div
+            key={key}
+            className="flex items-center gap-4 rounded-lg px-2 py-1.5"
+          >
             <Image src={item.img} alt="icons" width={40} height={41} />
 
             <div>

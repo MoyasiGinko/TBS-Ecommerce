@@ -302,7 +302,7 @@ values
   (
     'home.hero_main',
     'Home Hero Main Slide',
-    '{"salePercent":"30%","title":"True Wireless Noise Cancelling Headphone","description":"Lorem ipsum dolor sit amet, consectetur adipiscing elit.","ctaLabel":"Shop Now","ctaHref":"#","image":"/images/hero/hero-01.png"}'::jsonb
+    '{"items":[{"salePercent":"30%","title":"True Wireless Noise Cancelling Headphone","description":"Lorem ipsum dolor sit amet, consectetur adipiscing elit.","ctaLabel":"Shop Now","href":"/shop-with-sidebar","image":"/images/hero/hero-01.png"},{"salePercent":"25%","title":"Apple iPhone 14 Plus","description":"Powerful performance with all-day battery life and a brilliant display.","ctaLabel":"View Product","href":"/shop-details","image":"/images/hero/hero-02.png"}]}'::jsonb
   ),
   (
     'home.hero_feature',
@@ -312,7 +312,7 @@ values
   (
     'home.hero_side',
     'Home Hero Side Cards',
-    '{"cards":[{"title":"iPhone 14 Plus & 14 Pro Max","caption":"limited time offer","price":"$699","oldPrice":"$999","image":"/images/hero/hero-02.png"},{"title":"Wireless Headphone","caption":"limited time offer","price":"$699","oldPrice":"$999","image":"/images/hero/hero-01.png"}]}'::jsonb
+    '{"cards":[{"title":"iPhone 14 Plus & 14 Pro Max","caption":"limited time offer","price":"$699","oldPrice":"$999","image":"/images/hero/hero-02.png","href":"/shop-details"},{"title":"Wireless Headphone","caption":"limited time offer","price":"$699","oldPrice":"$999","image":"/images/hero/hero-01.png","href":"/shop-details"}]}'::jsonb
   ),
   (
     'home.promo',

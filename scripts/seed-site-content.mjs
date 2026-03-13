@@ -26,6 +26,7 @@ const serviceRoleKey = env["SUPABASE_SERVICE_ROLE_KEY"];
 
 if (!supabaseUrl || !serviceRoleKey) {
   console.error(
+    "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env",
   );
   process.exit(1);
 }
@@ -44,6 +45,77 @@ const rows = [
         { id: 1, title: "Popular", newTab: false, path: "/" },
         { id: 2, title: "Shop", newTab: false, path: "/shop-with-sidebar" },
         { id: 3, title: "Contact", newTab: false, path: "/contact" },
+        {
+          id: 6,
+          title: "Pages",
+          newTab: false,
+          path: "/",
+          submenu: [
+            {
+              id: 61,
+              title: "Shop With Sidebar",
+              newTab: false,
+              path: "/shop-with-sidebar",
+            },
+            {
+              id: 62,
+              title: "Shop Without Sidebar",
+              newTab: false,
+              path: "/shop-without-sidebar",
+            },
+            { id: 64, title: "Checkout", newTab: false, path: "/checkout" },
+            { id: 65, title: "Cart", newTab: false, path: "/cart" },
+            { id: 66, title: "Wishlist", newTab: false, path: "/wishlist" },
+            { id: 67, title: "Sign in", newTab: false, path: "/signin" },
+            { id: 68, title: "Sign up", newTab: false, path: "/signup" },
+            {
+              id: 69,
+              title: "My Account",
+              newTab: false,
+              path: "/my-account",
+            },
+            { id: 70, title: "Contact", newTab: false, path: "/contact" },
+            { id: 75, title: "Error", newTab: false, path: "/error" },
+            {
+              id: 63,
+              title: "Mail Success",
+              newTab: false,
+              path: "/mail-success",
+            },
+          ],
+        },
+        {
+          id: 7,
+          title: "Blogs",
+          newTab: false,
+          path: "/",
+          submenu: [
+            {
+              id: 71,
+              title: "Blog Grid with sidebar",
+              newTab: false,
+              path: "/blogs/blog-grid-with-sidebar",
+            },
+            {
+              id: 72,
+              title: "Blog Grid",
+              newTab: false,
+              path: "/blogs/blog-grid",
+            },
+            {
+              id: 73,
+              title: "Blog details with sidebar",
+              newTab: false,
+              path: "/blogs/blog-details-with-sidebar",
+            },
+            {
+              id: 74,
+              title: "Blog details",
+              newTab: false,
+              path: "/blogs/blog-details",
+            },
+          ],
+        },
       ],
     },
   },
@@ -51,12 +123,26 @@ const rows = [
     key: "home.hero_main",
     title: "Home Hero Main Slide",
     content: {
-      salePercent: "30%",
-      title: "True Wireless Noise Cancelling Headphone",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      ctaLabel: "Shop Now",
-      ctaHref: "#",
-      image: "/images/hero/hero-01.png",
+      items: [
+        {
+          salePercent: "30%",
+          title: "True Wireless Noise Cancelling Headphone",
+          description:
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+          ctaLabel: "Shop Now",
+          href: "/shop-with-sidebar",
+          image: "/images/hero/hero-01.png",
+        },
+        {
+          salePercent: "25%",
+          title: "Apple iPhone 14 Plus",
+          description:
+            "Powerful performance with all-day battery life and a brilliant display.",
+          ctaLabel: "View Product",
+          href: "/shop-details",
+          image: "/images/hero/hero-02.png",
+        },
+      ],
     },
   },
   {
@@ -70,6 +156,7 @@ const rows = [
           price: "$699",
           oldPrice: "$999",
           image: "/images/hero/hero-02.png",
+          href: "/shop-details",
         },
         {
           title: "Wireless Headphone",
@@ -77,6 +164,7 @@ const rows = [
           price: "$699",
           oldPrice: "$999",
           image: "/images/hero/hero-01.png",
+          href: "/shop-details",
         },
       ],
     },

@@ -6,6 +6,7 @@ import { getProducts } from "@/lib/data/store";
 
 const NewArrival = async () => {
   const products = await getProducts();
+  const newArrivalProducts = products.slice(0, 8);
 
   return (
     <section className="overflow-hidden pt-15">
@@ -50,7 +51,7 @@ const NewArrival = async () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-7.5 gap-y-9">
           {/* <!-- New Arrivals item --> */}
-          {products.map((item, key) => (
+          {newArrivalProducts.map((item, key) => (
             <ProductItem item={item} key={key} />
           ))}
         </div>

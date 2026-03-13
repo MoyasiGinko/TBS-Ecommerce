@@ -47,6 +47,60 @@ function createValueByKind(kind: NewValueKind): any {
 }
 
 // ---------------------------------------------------------------------------
+// Item summary – single-line preview for collapsed nodes
+// ---------------------------------------------------------------------------
+function getItemSummary(value: any): string {
+  if (value === null || value === undefined) return "";
+  if (Array.isArray(value)) {
+    return `${value.length} item${value.length === 1 ? "" : "s"}`;
+  }
+  if (typeof value === "object") {
+    const strings = Object.entries(value)
+      .filter(
+        ([, v]) =>
+          typeof v === "string" &&
+          (v as string).length > 0 &&
+          (v as string).length < 60,
+      )
+      .slice(0, 3)
+      .map(([, v]) => v as string);
+    if (strings.length) return strings.join(" · ");
+    return `{${Object.keys(value).length} fields}`;
+  }
+  return String(value).slice(0, 80);
+}
+
+// ---------------------------------------------------------------------------
+// Depth-based visual hierarchy (cycles every 4 levels)
+// ---------------------------------------------------------------------------
+type DepthStyle = { container: string; header: string; badge: string };
+const DEPTH_STYLES: DepthStyle[] = [
+  {
+    container: "border-gray-3 bg-gray-1/40",
+    header: "bg-gray-1 border-b border-gray-3",
+    badge: "bg-blue/10 text-blue",
+  },
+  {
+    container: "border-blue/20 bg-blue/5",
+    header: "bg-blue/10 border-b border-blue/20",
+    badge: "bg-blue/10 text-blue",
+  },
+  {
+    container: "border-teal/20 bg-teal/5",
+    header: "bg-teal/10 border-b border-teal/20",
+    badge: "bg-teal/10 text-teal",
+  },
+  {
+    container: "border-orange/20 bg-orange/5",
+    header: "bg-orange/10 border-b border-orange/20",
+    badge: "bg-orange/10 text-orange",
+  },
+];
+function getDepthStyle(depth: number): DepthStyle {
+  return DEPTH_STYLES[depth % DEPTH_STYLES.length];
+}
+
+// ---------------------------------------------------------------------------
 // JSON sub-editor (needs its own useState so it must be a separate component)
 // ---------------------------------------------------------------------------
 function JsonSubEditor({
@@ -90,58 +144,224 @@ function ArrayNodeEditor({
   onChange: (v: any[]) => void;
   depth: number;
 }) {
-  const [newItemType, setNewItemType] = useState<NewValueKind>("string");
+  const [collapsed, setCollapsed] = useState<Set<number>>(() => {
+    // Start objects/arrays collapsed so the list doesn't overwhelm
+    const init = new Set<number>();
+    items.forEach((item, i) => {
+      if (item !== null && typeof item === "object") init.add(i);
+    });
+    return init;
+  });
+  const [newItemType, setNewItemType] = useState<NewValueKind>("object");
+
+  const ds = getDepthStyle(depth);
+
+  const toggleItem = (i: number) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
+
+  const moveItem = (from: number, to: number) => {
+    const next = [...items];
+    const [el] = next.splice(from, 1);
+    next.splice(to, 0, el);
+    onChange(next);
+    setCollapsed((prev) => {
+      const updated = new Set<number>();
+      prev.forEach((idx) => {
+        if (idx === from) updated.add(to);
+        else if (idx === to) updated.add(from);
+        else updated.add(idx);
+      });
+      return updated;
+    });
+  };
+
+  const removeItem = (i: number) => {
+    onChange(items.filter((_, idx) => idx !== i));
+    setCollapsed((prev) => {
+      const next = new Set<number>();
+      prev.forEach((idx) => {
+        if (idx < i) next.add(idx);
+        else if (idx > i) next.add(idx - 1);
+      });
+      return next;
+    });
+  };
+
+  const duplicateItem = (i: number) => {
+    const cloned = JSON.parse(JSON.stringify(items[i]));
+    const next = [...items];
+    next.splice(i + 1, 0, cloned);
+    onChange(next);
+    setCollapsed((prev) => {
+      const shifted = new Set<number>();
+      prev.forEach((idx) => {
+        shifted.add(idx <= i ? idx : idx + 1);
+      });
+      if (cloned !== null && typeof cloned === "object") shifted.add(i + 1);
+      return shifted;
+    });
+  };
 
   return (
-    <div className="space-y-2 rounded-xl border border-blue/20 bg-blue/5 p-3">
-      {items.map((item, i) => (
-        <div
-          key={i}
-          className="rounded-lg border border-blue/20 bg-white p-2.5"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold text-blue uppercase tracking-wide">
-              Item {i + 1} • {detectType(item)}
-            </span>
-            <button
-              type="button"
-              className="text-xs text-red hover:underline"
-              onClick={() => onChange(items.filter((_, idx) => idx !== i))}
-            >
-              Remove
-            </button>
-          </div>
-          <SmartFieldEditor
-            value={item}
-            onChange={(updated) => {
-              const next = [...items];
-              next[i] = updated;
-              onChange(next);
-            }}
-            depth={depth + 1}
-          />
-        </div>
-      ))}
+    <div className={`space-y-2 rounded-xl border p-3 ${ds.container}`}>
+      {items.length === 0 && (
+        <p className="text-xs text-dark-4 italic text-center py-2">
+          No items yet — add one below.
+        </p>
+      )}
 
-      <div className="flex flex-wrap gap-2 items-center">
+      {items.map((item, i) => {
+        const type = detectType(item);
+        const isComplex = type === "object" || type === "array";
+        const isCollapsed = collapsed.has(i);
+        const summary = isCollapsed ? getItemSummary(item) : "";
+
+        return (
+          <div
+            key={i}
+            className="rounded-lg border border-gray-3/70 bg-white overflow-hidden shadow-sm"
+          >
+            {/* ── Item header ─────────────────────────────────────── */}
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-2 ${ds.header}`}
+            >
+              {/* Collapse toggle */}
+              {isComplex ? (
+                <button
+                  type="button"
+                  onClick={() => toggleItem(i)}
+                  className="w-5 h-5 flex items-center justify-center text-dark-4 hover:text-dark text-[10px] shrink-0"
+                  title={isCollapsed ? "Expand" : "Collapse"}
+                >
+                  {isCollapsed ? "▶" : "▼"}
+                </button>
+              ) : (
+                <span className="w-5 shrink-0" />
+              )}
+
+              {/* Index badge */}
+              <span className="text-[11px] font-bold text-dark-3 shrink-0">
+                #{i + 1}
+              </span>
+
+              {/* Type badge */}
+              <span
+                className={`text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded shrink-0 ${ds.badge}`}
+              >
+                {type}
+              </span>
+
+              {/* Collapsed summary */}
+              {isCollapsed && summary && (
+                <span className="text-xs text-dark-4 truncate flex-1 min-w-0">
+                  {summary}
+                </span>
+              )}
+              {!isCollapsed && <span className="flex-1" />}
+
+              {/* Controls */}
+              <div className="flex items-center gap-0.5 shrink-0">
+                <button
+                  type="button"
+                  title="Move up"
+                  disabled={i === 0}
+                  onClick={() => moveItem(i, i - 1)}
+                  className="w-6 h-6 flex items-center justify-center text-dark-4 hover:text-dark disabled:opacity-25 text-xs rounded"
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  title="Move down"
+                  disabled={i === items.length - 1}
+                  onClick={() => moveItem(i, i + 1)}
+                  className="w-6 h-6 flex items-center justify-center text-dark-4 hover:text-dark disabled:opacity-25 text-xs rounded"
+                >
+                  ↓
+                </button>
+                <button
+                  type="button"
+                  title="Duplicate item"
+                  onClick={() => duplicateItem(i)}
+                  className="w-6 h-6 flex items-center justify-center text-dark-4 hover:text-blue text-xs rounded"
+                >
+                  ⊕
+                </button>
+                <button
+                  type="button"
+                  title="Remove item"
+                  onClick={() => removeItem(i)}
+                  className="w-6 h-6 flex items-center justify-center text-red hover:text-red-dark text-xs rounded"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* ── Item content (hidden when collapsed+complex) ─────── */}
+            {(!isComplex || !isCollapsed) && (
+              <div className="p-2.5">
+                <SmartFieldEditor
+                  value={item}
+                  onChange={(updated) => {
+                    const next = [...items];
+                    next[i] = updated;
+                    onChange(next);
+                  }}
+                  depth={depth + 1}
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* ── Add item row ───────────────────────────────────────────── */}
+      <div className="flex flex-wrap gap-2 items-center pt-1.5 border-t border-gray-3/40">
         <select
-          className={inputClass}
+          className={`${inputClass} w-auto py-1.5 text-xs`}
           value={newItemType}
           onChange={(e) => setNewItemType(e.target.value as NewValueKind)}
         >
           <option value="string">String</option>
           <option value="number">Number</option>
           <option value="boolean">Boolean</option>
-          <option value="object">Object</option>
-          <option value="array">Array</option>
+          <option value="object">Object {"{}"}</option>
+          <option value="array">Array {"[]"}</option>
         </select>
         <button
           type="button"
           className={secondaryBtnClass}
-          onClick={() => onChange([...items, createValueByKind(newItemType)])}
+          onClick={() => {
+            const newVal = createValueByKind(newItemType);
+            onChange([...items, newVal]);
+            if (newItemType === "object" || newItemType === "array") {
+              setCollapsed((prev) => {
+                const next = new Set<number>();
+                prev.forEach((idx) => next.add(idx));
+                next.add(items.length);
+                return next;
+              });
+            }
+          }}
         >
           + Add Item
         </button>
+        {items.length > 0 &&
+          ["object", "array"].includes(detectType(items[items.length - 1])) && (
+            <button
+              type="button"
+              className={secondaryBtnClass}
+              title="Clone the last item as a starting template"
+              onClick={() => duplicateItem(items.length - 1)}
+            >
+              ⊕ Duplicate Last
+            </button>
+          )}
       </div>
     </div>
   );
@@ -159,57 +379,135 @@ function ObjectNodeEditor({
   onChange: (v: Record<string, any>) => void;
   depth?: number;
 }) {
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => {
+    // Start complex fields collapsed so the view stays clean
+    const init = new Set<string>();
+    Object.entries(obj).forEach(([k, v]) => {
+      if (v !== null && typeof v === "object") init.add(k);
+    });
+    return init;
+  });
   const [newKey, setNewKey] = useState("");
   const [newType, setNewType] = useState<NewValueKind>("string");
 
+  const ds = getDepthStyle(depth);
   const entries = Object.entries(obj);
 
+  const toggleField = (k: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      next.has(k) ? next.delete(k) : next.add(k);
+      return next;
+    });
+
+  const removeField = (k: string) => {
+    const next = { ...obj };
+    delete next[k];
+    onChange(next);
+    setCollapsed((prev) => {
+      const next2 = new Set(prev);
+      next2.delete(k);
+      return next2;
+    });
+  };
+
   return (
-    <div className="space-y-2 rounded-xl border border-gray-3 bg-gray-1/60 p-3">
-      {entries.map(([k, v]) => (
-        <div key={k} className="rounded-lg border border-gray-3 bg-white p-2.5">
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="flex items-center gap-2 min-w-0">
-              <code className="text-xs font-mono text-blue bg-blue/10 px-1.5 py-0.5 rounded truncate">
+    <div className={`space-y-2 rounded-xl border p-3 ${ds.container}`}>
+      {entries.length === 0 && (
+        <p className="text-xs text-dark-4 italic text-center py-1">
+          Empty object — add fields below.
+        </p>
+      )}
+
+      {entries.map(([k, v]) => {
+        const type = detectType(v);
+        const isComplex = type === "object" || type === "array";
+        const isCollapsed = collapsed.has(k);
+        const summary = isCollapsed ? getItemSummary(v) : "";
+
+        return (
+          <div
+            key={k}
+            className="rounded-lg border border-gray-3/70 bg-white overflow-hidden shadow-sm"
+          >
+            {/* ── Field header ─────────────────────────────────────── */}
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-2 ${ds.header}`}
+            >
+              {/* Collapse toggle for complex types */}
+              {isComplex ? (
+                <button
+                  type="button"
+                  onClick={() => toggleField(k)}
+                  className="w-5 h-5 flex items-center justify-center text-dark-4 hover:text-dark text-[10px] shrink-0"
+                  title={isCollapsed ? "Expand" : "Collapse"}
+                >
+                  {isCollapsed ? "▶" : "▼"}
+                </button>
+              ) : (
+                <span className="w-5 shrink-0" />
+              )}
+
+              {/* Key */}
+              <code className="text-xs font-mono text-blue bg-blue/10 px-1.5 py-0.5 rounded shrink-0 max-w-[140px] truncate">
                 {k}
               </code>
-              <span className="text-[10px] text-dark-4 bg-gray-2 px-1.5 py-0.5 rounded uppercase tracking-wide">
-                {detectType(v)}
+
+              {/* Type badge */}
+              <span
+                className={`text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded shrink-0 ${ds.badge}`}
+              >
+                {type}
               </span>
+
+              {/* Collapsed summary */}
+              {isCollapsed && summary && (
+                <span className="text-xs text-dark-4 truncate flex-1 min-w-0">
+                  {summary}
+                </span>
+              )}
+              {!isCollapsed && <span className="flex-1" />}
+
+              {/* Remove */}
+              <button
+                type="button"
+                title="Remove field"
+                onClick={() => removeField(k)}
+                className="w-6 h-6 flex items-center justify-center text-red hover:text-red-dark text-xs rounded shrink-0"
+              >
+                ✕
+              </button>
             </div>
-            <button
-              type="button"
-              className="text-xs text-red hover:underline"
-              onClick={() => {
-                const next = { ...obj };
-                delete next[k];
-                onChange(next);
-              }}
-            >
-              Remove
-            </button>
+
+            {/* ── Field value (hidden when collapsed + complex) ─────── */}
+            {(!isComplex || !isCollapsed) && (
+              <div className="p-2.5">
+                <SmartFieldEditor
+                  value={v}
+                  onChange={(updated) => onChange({ ...obj, [k]: updated })}
+                  depth={depth + 1}
+                />
+              </div>
+            )}
           </div>
+        );
+      })}
 
-          <SmartFieldEditor
-            value={v}
-            onChange={(updated) => onChange({ ...obj, [k]: updated })}
-            depth={depth + 1}
-          />
-        </div>
-      ))}
-
-      <div className="grid grid-cols-1 md:grid-cols-[1.2fr_auto_auto] gap-2 items-end">
+      {/* ── Add field row ─────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2 items-end pt-1.5 border-t border-gray-3/40">
         <div className="space-y-1">
-          <label className="text-xs text-dark-4">New Field Key</label>
+          <label className="text-[11px] font-medium text-dark-4">
+            Field key
+          </label>
           <input
             className={inputClass}
-            placeholder="e.g. subtitle"
+            placeholder='e.g. "title"'
             value={newKey}
             onChange={(e) => setNewKey(e.target.value)}
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-dark-4">Type</label>
+          <label className="text-[11px] font-medium text-dark-4">Type</label>
           <select
             className={inputClass}
             value={newType}
@@ -218,8 +516,8 @@ function ObjectNodeEditor({
             <option value="string">String</option>
             <option value="number">Number</option>
             <option value="boolean">Boolean</option>
-            <option value="object">Object</option>
-            <option value="array">Array</option>
+            <option value="object">Object {"{}"}</option>
+            <option value="array">Array {"[]"}</option>
           </select>
         </div>
         <button
@@ -228,9 +526,17 @@ function ObjectNodeEditor({
           onClick={() => {
             const trimmed = newKey.trim();
             if (!trimmed || trimmed in obj) return;
-            onChange({ ...obj, [trimmed]: createValueByKind(newType) });
+            const val = createValueByKind(newType);
+            onChange({ ...obj, [trimmed]: val });
             setNewKey("");
-            setNewType("string");
+            if (newType === "object" || newType === "array") {
+              setCollapsed((prev) => {
+                const next = new Set<string>();
+                prev.forEach((k) => next.add(k));
+                next.add(trimmed);
+                return next;
+              });
+            }
           }}
           disabled={!newKey.trim() || newKey.trim() in obj}
         >
@@ -324,36 +630,8 @@ function ContentObjectEditor({
   content: Record<string, any>;
   onChange: (c: Record<string, any>) => void;
 }) {
-  const entries = Object.entries(content);
-  if (!entries.length) {
-    return <ObjectNodeEditor obj={{}} onChange={onChange} />;
-  }
-  return (
-    <div className="space-y-4">
-      {entries.map(([key, value]) => {
-        const type = detectType(value);
-        return (
-          <div key={key} className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-dark">
-                {humanLabel(key)}
-              </label>
-              <code className="text-xs font-mono text-blue bg-blue/10 px-1.5 py-0.5 rounded">
-                {key}
-              </code>
-              <span className="text-[10px] text-dark-4 bg-gray-2 px-1.5 py-0.5 rounded uppercase tracking-wide">
-                {type}
-              </span>
-            </div>
-            <SmartFieldEditor
-              value={value}
-              onChange={(newVal) => onChange({ ...content, [key]: newVal })}
-            />
-          </div>
-        );
-      })}
-    </div>
-  );
+  // Delegate to ObjectNodeEditor at depth 0 — supports add / remove / collapse
+  return <ObjectNodeEditor obj={content} onChange={onChange} depth={0} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -439,12 +717,19 @@ function ContentPreview({
   const hasImage = typeof content.image === "string" && !!content.image;
 
   if (contentKey.startsWith("home.hero_main")) {
+    const mainItem =
+      Array.isArray(content.items) && content.items.length
+        ? content.items[0]
+        : content;
+    const slideCount = Array.isArray(content.items) ? content.items.length : 1;
+    const mainHasImage = typeof mainItem.image === "string" && !!mainItem.image;
+
     return (
       <div className="rounded-xl border border-gray-3 bg-gradient-to-r from-[#E5EAF4] to-white p-4 flex items-center gap-4">
-        {hasImage && (
+        {mainHasImage && (
           <div className="shrink-0 w-16 h-16 relative">
             <Image
-              src={content.image}
+              src={mainItem.image}
               alt="hero"
               fill
               className="object-contain"
@@ -453,19 +738,22 @@ function ContentPreview({
         )}
         <div>
           <span className="text-blue font-bold text-xl">
-            {content.salePercent} OFF
+            {mainItem.salePercent} OFF
           </span>
           <p className="font-semibold text-dark text-sm mt-0.5">
-            {content.title}
+            {mainItem.title}
           </p>
           <p className="text-xs text-dark-4 line-clamp-2">
-            {content.description}
+            {mainItem.description}
           </p>
-          {content.ctaLabel && (
+          {mainItem.ctaLabel && (
             <span className="mt-2 inline-block text-xs bg-dark text-white px-3 py-1 rounded-md">
-              {content.ctaLabel}
+              {mainItem.ctaLabel}
             </span>
           )}
+          <p className="text-[10px] text-dark-4 mt-1">
+            {slideCount} slide{slideCount === 1 ? "" : "s"}
+          </p>
         </div>
       </div>
     );
