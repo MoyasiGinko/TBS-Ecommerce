@@ -1,7 +1,16 @@
-import React from "react";
-import Image from "next/image";
+"use client";
 
-const featureData = [
+import React, { useEffect, useState } from "react";
+import Image from "next/image";
+import { getSiteContentMapClient } from "@/lib/data/siteContent";
+
+type FeatureItem = {
+  img: string;
+  title: string;
+  description: string;
+};
+
+const defaultFeatures: FeatureItem[] = [
   {
     img: "/images/icons/icon-01.svg",
     title: "Free Shipping",
@@ -25,10 +34,24 @@ const featureData = [
 ];
 
 const HeroFeature = () => {
+  const [features, setFeatures] = useState<FeatureItem[]>(defaultFeatures);
+
+  useEffect(() => {
+    const loadContent = async () => {
+      const contentMap = await getSiteContentMapClient();
+      const managed = contentMap["home.hero_feature"];
+      if (Array.isArray(managed?.items) && managed.items.length) {
+        setFeatures(managed.items as FeatureItem[]);
+      }
+    };
+
+    loadContent();
+  }, []);
+
   return (
     <div className="max-w-[1060px] w-full mx-auto px-4 sm:px-8 xl:px-0">
       <div className="flex flex-wrap items-center gap-7.5 xl:gap-12.5 mt-10">
-        {featureData.map((item, key) => (
+        {features.map((item, key) => (
           <div className="flex items-center gap-4" key={key}>
             <Image src={item.img} alt="icons" width={40} height={41} />
 

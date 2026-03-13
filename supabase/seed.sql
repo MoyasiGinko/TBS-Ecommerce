@@ -297,12 +297,17 @@ values
   (
     'header.menu',
     'Header Menu',
-    '{"items":[{"id":1,"title":"Popular","newTab":false,"path":"/"},{"id":2,"title":"Shop","newTab":false,"path":"/shop-with-sidebar"},{"id":3,"title":"Contact","newTab":false,"path":"/contact"}]}'::jsonb
+    '{"items":[{"id":1,"title":"Popular","newTab":false,"path":"/"},{"id":2,"title":"Shop","newTab":false,"path":"/shop-with-sidebar"},{"id":3,"title":"Contact","newTab":false,"path":"/contact"},{"id":6,"title":"Pages","newTab":false,"path":"/","submenu":[{"id":61,"title":"Shop With Sidebar","newTab":false,"path":"/shop-with-sidebar"},{"id":62,"title":"Shop Without Sidebar","newTab":false,"path":"/shop-without-sidebar"},{"id":64,"title":"Checkout","newTab":false,"path":"/checkout"},{"id":65,"title":"Cart","newTab":false,"path":"/cart"},{"id":66,"title":"Wishlist","newTab":false,"path":"/wishlist"},{"id":67,"title":"Sign in","newTab":false,"path":"/signin"},{"id":68,"title":"Sign up","newTab":false,"path":"/signup"},{"id":69,"title":"My Account","newTab":false,"path":"/my-account"},{"id":70,"title":"Contact","newTab":false,"path":"/contact"},{"id":75,"title":"Error","newTab":false,"path":"/error"},{"id":63,"title":"Mail Success","newTab":false,"path":"/mail-success"}]},{"id":7,"title":"Blogs","newTab":false,"path":"/","submenu":[{"id":71,"title":"Blog Grid with sidebar","newTab":false,"path":"/blogs/blog-grid-with-sidebar"},{"id":72,"title":"Blog Grid","newTab":false,"path":"/blogs/blog-grid"},{"id":73,"title":"Blog details with sidebar","newTab":false,"path":"/blogs/blog-details-with-sidebar"},{"id":74,"title":"Blog details","newTab":false,"path":"/blogs/blog-details"}]}]}'::jsonb
   ),
   (
     'home.hero_main',
     'Home Hero Main Slide',
     '{"salePercent":"30%","title":"True Wireless Noise Cancelling Headphone","description":"Lorem ipsum dolor sit amet, consectetur adipiscing elit.","ctaLabel":"Shop Now","ctaHref":"#","image":"/images/hero/hero-01.png"}'::jsonb
+  ),
+  (
+    'home.hero_feature',
+    'Home Hero Features',
+    '{"items":[{"img":"/images/icons/icon-01.svg","title":"Free Shipping","description":"For all orders $200"},{"img":"/images/icons/icon-02.svg","title":"1 & 1 Returns","description":"Cancellation after 1 day"},{"img":"/images/icons/icon-03.svg","title":"100% Secure Payments","description":"Gurantee secure payments"},{"img":"/images/icons/icon-04.svg","title":"24/7 Dedicated Support","description":"Anywhere & anytime"}]}'::jsonb
   ),
   (
     'home.hero_side',
