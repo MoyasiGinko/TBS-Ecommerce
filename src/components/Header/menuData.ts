@@ -21,7 +21,7 @@ export const menuData: Menu[] = [
   },
   {
     id: 6,
-    title: "pages",
+    title: "Pages",
     newTab: false,
     path: "/",
     submenu: [
@@ -80,7 +80,7 @@ export const menuData: Menu[] = [
         path: "/contact",
       },
       {
-        id: 62,
+        id: 75,
         title: "Error",
         newTab: false,
         path: "/error",
@@ -95,7 +95,7 @@ export const menuData: Menu[] = [
   },
   {
     id: 7,
-    title: "blogs",
+    title: "Blogs",
     newTab: false,
     path: "/",
     submenu: [

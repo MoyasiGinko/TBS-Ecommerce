@@ -22,7 +22,7 @@ create table if not exists public.products (
 
 create table if not exists public.product_detail_enums (
   id bigint generated always as identity primary key,
-  enum_group text not null check (enum_group in ('optionsGroup1', 'optionsGroup2', 'optionsGroup3', 'colors', 'gender')),
+  enum_group text not null check (enum_group in ('optionsGroup1', 'optionsGroup2', 'optionsGroup3', 'colors', 'gender', 'availability')),
   option_id text not null,
   option_title text not null,
   sort_order int not null default 0,
@@ -44,13 +44,30 @@ alter table if exists public.product_detail_enums
 
 alter table if exists public.product_detail_enums
   add constraint product_detail_enums_enum_group_check
-  check (enum_group in ('optionsGroup1', 'optionsGroup2', 'optionsGroup3', 'colors', 'gender'));
+  check (enum_group in ('optionsGroup1', 'optionsGroup2', 'optionsGroup3', 'colors', 'gender', 'availability'));
 
-update public.product_detail_enums
-set
-  option_id = coalesce(option_id, lower(regexp_replace(coalesce(name, ''), '[^a-z0-9]+', '-', 'g'))),
-  option_title = coalesce(option_title, name)
-where option_id is null or option_title is null;
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'product_detail_enums'
+      and column_name = 'name'
+  ) then
+    execute $migration$
+      update public.product_detail_enums
+      set
+        option_id = coalesce(
+          option_id,
+          lower(regexp_replace(coalesce(name, ''), '[^a-z0-9]+', '-', 'g'))
+        ),
+        option_title = coalesce(option_title, name)
+      where option_id is null or option_title is null
+    $migration$;
+  end if;
+end
+$$;
 
 alter table if exists public.product_detail_enums
   alter column option_id set not null;

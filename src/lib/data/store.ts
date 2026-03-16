@@ -119,8 +119,11 @@ const mapOrder = (row: any): Order => ({
   title: row.title,
 });
 
-const resolveServer = (client?: SupabaseLike) =>
-  client || createSupabaseServerClient();
+const resolveServer = (client?: SupabaseLike) => {
+  if (client) return client;
+  if (typeof window !== "undefined") return null;
+  return createSupabaseServerClient();
+};
 
 export const getProducts = async (
   client?: SupabaseLike,
