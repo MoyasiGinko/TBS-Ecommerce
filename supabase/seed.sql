@@ -322,7 +322,7 @@ values
   (
     'home.countdown',
     'Home Countdown Banner',
-    '{"deadline":"December, 31, 2026","tag":"Don\u2019t Miss!!","title":"Enhance Your Music Experience","description":"The Havit H206d is a wired PC headphone.","ctaLabel":"Check it Out!","ctaHref":"#","image":"/images/countdown/countdown-01.png"}'::jsonb
+    '{"deadline":"2026-12-31T23:59:59Z","tag":"Don\u2019t Miss!!","title":"Enhance Your Music Experience","description":"The Havit H206d is a wired PC headphone.","ctaLabel":"Check it Out!","ctaHref":"#","image":"/images/countdown/countdown-01.png"}'::jsonb
   ),
   (
     'common.newsletter',

@@ -278,7 +278,7 @@ const rows = [
     key: "home.countdown",
     title: "Home Countdown Banner",
     content: {
-      deadline: "December, 31, 2026",
+      deadline: "2026-12-31T23:59:59Z",
       tag: "Don\u2019t Miss!!",
       title: "Enhance Your Music Experience",
       description: "The Havit H206d is a wired PC headphone.",
