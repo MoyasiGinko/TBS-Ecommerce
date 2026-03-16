@@ -19,6 +19,23 @@ import { getCurrentProfile } from "@/lib/supabase/auth";
 import { UserProfile } from "@/types/user";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
+const applyMenuVisibility = (items: Menu[] = []): Menu[] => {
+  return items
+    .filter((item) => !item.hidden)
+    .map((item) => {
+      const next: Menu = { ...item };
+      if (Array.isArray(item.submenu)) {
+        const visibleSubmenu = applyMenuVisibility(item.submenu);
+        if (visibleSubmenu.length) {
+          next.submenu = visibleSubmenu;
+        } else {
+          delete next.submenu;
+        }
+      }
+      return next;
+    });
+};
+
 const Header = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -29,7 +46,9 @@ const Header = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
-  const [headerMenu, setHeaderMenu] = useState<Menu[]>(menuData);
+  const [headerMenu, setHeaderMenu] = useState<Menu[]>(
+    applyMenuVisibility(menuData),
+  );
   const searchRef = useRef<HTMLDivElement>(null);
   const { openCartModal } = useCartModalContext();
 
@@ -59,7 +78,7 @@ const Header = () => {
       const contentMap = await getSiteContentMapClient();
       const managedMenu = contentMap["header.menu"]?.items;
       if (Array.isArray(managedMenu) && managedMenu.length) {
-        setHeaderMenu(managedMenu as Menu[]);
+        setHeaderMenu(applyMenuVisibility(managedMenu as Menu[]));
       }
     };
 
