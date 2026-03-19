@@ -486,6 +486,7 @@ function ObjectNodeEditor({
                   value={v}
                   onChange={(updated) => onChange({ ...obj, [k]: updated })}
                   depth={depth + 1}
+                  fieldKey={k}
                 />
               </div>
             )}
@@ -554,15 +555,94 @@ function SmartFieldEditor({
   value,
   onChange,
   depth = 0,
+  fieldKey = "",
 }: {
   value: any;
   onChange: (v: any) => void;
   depth?: number;
+  fieldKey?: string;
 }) {
   const type = detectType(value);
 
   if (type === "string") {
     const s = value as string;
+
+    // ── Deadline datetime picker ──────────────────────────────────
+    if (fieldKey.toLowerCase().includes("deadline")) {
+      // Convert ISO string (2026-12-31T23:59:59Z) to datetime-local format (2026-12-31T23:59)
+      const toLocalFormat = (isoStr: string): string => {
+        try {
+          const date = new Date(isoStr);
+          const year = date.getUTCFullYear();
+          const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+          const day = String(date.getUTCDate()).padStart(2, "0");
+          const hours = String(date.getUTCHours()).padStart(2, "0");
+          const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+          return `${year}-${month}-${day}T${hours}:${minutes}`;
+        } catch {
+          return "";
+        }
+      };
+
+      // Convert datetime-local format back to ISO string with :59 seconds
+      const toIsoFormat = (localStr: string): string => {
+        if (!localStr) return "";
+        const dt = new Date(`${localStr}:00Z`);
+        return dt.toISOString().replace(".000Z", "Z");
+      };
+
+      // Convert ISO string to parseable format (Month DD, YYYY h:mm AM/PM)
+      const toParseableFormat = (isoStr: string): string => {
+        try {
+          const date = new Date(isoStr);
+          const monthNames = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+          ];
+          const month = monthNames[date.getUTCMonth()];
+          const day = date.getUTCDate();
+          const year = date.getUTCFullYear();
+          const utcHours = date.getUTCHours();
+          const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+          const ampm = utcHours >= 12 ? "PM" : "AM";
+          const hour12 = utcHours % 12 === 0 ? 12 : utcHours % 12;
+          return `${month} ${day}, ${year} ${hour12}:${minutes} ${ampm}`;
+        } catch {
+          return "";
+        }
+      };
+
+      return (
+        <div className="space-y-1">
+          <input
+            type="datetime-local"
+            className={inputClass}
+            value={toLocalFormat(s)}
+            onChange={(e) => {
+              const iso = toIsoFormat(e.target.value);
+              onChange(iso);
+            }}
+          />
+          <p className="text-xs text-dark-4">
+            Format:{" "}
+            <code className="font-mono font-semibold text-dark">
+              {toParseableFormat(s)}
+            </code>
+          </p>
+        </div>
+      );
+    }
+
     const isLong = s.includes("\n") || s.length > 100;
     return isLong ? (
       <textarea
@@ -997,7 +1077,7 @@ export const ContentTab = ({
   supabase,
   saveAction,
 }: ContentTabProps) => {
-  // ── Add form
+  // ── Add form (modal)
   const [addOpen, setAddOpen] = useState(false);
   const [newKey, setNewKey] = useState("");
   const [newTitle, setNewTitle] = useState("");
@@ -1014,7 +1094,7 @@ export const ContentTab = ({
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [previewId, setPreviewId] = useState<number | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   // ── Edit
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -1074,22 +1154,50 @@ export const ContentTab = ({
         {siteContents.length === 1 ? "" : "s"}
       </p>
 
-      {/* ── Add form (collapsible) ────────────────────────────────────── */}
-      <div className="rounded-xl border border-gray-3 bg-gray-1/50 mb-5 overflow-hidden">
+      <div className="mb-5 rounded-xl border border-gray-3 bg-gradient-to-r from-gray-1 to-white px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-dark">Content Library</p>
+          <p className="text-xs text-dark-4">
+            Edit and preview existing blocks. Create new blocks from a dedicated
+            screen.
+          </p>
+        </div>
         <button
           type="button"
-          className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-dark hover:bg-gray-1 transition"
-          onClick={() => setAddOpen((v) => !v)}
+          className={primaryBtnClass}
+          onClick={() => {
+            setAddStatus(null);
+            setAddOpen(true);
+          }}
         >
-          <span>+ Add New Content Block</span>
-          <span className="text-dark-4 text-xs">{addOpen ? "▲" : "▼"}</span>
+          + Add New Content Block
         </button>
+      </div>
 
-        {addOpen && (
-          <div className="border-t border-gray-3 p-4 space-y-4">
+      {addOpen ? (
+        <div className="rounded-xl border border-gray-3 bg-white overflow-hidden">
+          <div className="flex items-start justify-between gap-4 border-b border-gray-3 px-5 py-4 bg-gray-1/40">
+            <div>
+              <h4 className="text-base font-semibold text-dark">
+                Add New Content Block
+              </h4>
+              <p className="text-xs text-dark-4 mt-0.5">
+                Dedicated create view. Go back to return to content edit and
+                preview list.
+              </p>
+            </div>
+            <button
+              type="button"
+              className={secondaryBtnClass}
+              onClick={() => setAddOpen(false)}
+            >
+              ← Back To Content List
+            </button>
+          </div>
+
+          <div className="p-5 space-y-4">
             {addStatus && <StatusBanner status={addStatus} />}
 
-            {/* Key + Title */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-dark">
@@ -1115,8 +1223,7 @@ export const ContentTab = ({
               </div>
             </div>
 
-            {/* Content editor */}
-            <div className="rounded-xl border border-gray-3 bg-white p-3 space-y-3">
+            <div className="rounded-xl border border-gray-3 bg-gray-1/40 p-3 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wide text-dark-4">
                   Content Fields
@@ -1145,7 +1252,7 @@ export const ContentTab = ({
               {addMode === "json" ? (
                 <div className="space-y-1">
                   <textarea
-                    className={`${inputClass} font-mono text-xs min-h-[140px]`}
+                    className={`${inputClass} font-mono text-xs min-h-[180px]`}
                     placeholder={
                       '{\n  "title": "Hello World",\n  "ctaLabel": "Shop Now"\n}'
                     }
@@ -1163,10 +1270,6 @@ export const ContentTab = ({
                   {addJsonErr && (
                     <p className="text-xs text-red">{addJsonErr}</p>
                   )}
-                  <p className="text-xs text-dark-4">
-                    Enter content as JSON, then switch to <strong>Form</strong>{" "}
-                    mode for a visual editor.
-                  </p>
                 </div>
               ) : (
                 <ContentObjectEditor
@@ -1179,306 +1282,331 @@ export const ContentTab = ({
               )}
             </div>
 
-            <button
-              disabled={isSaving}
-              className={primaryBtnClass}
-              onClick={() => {
-                if (!newKey.trim()) {
-                  setAddStatus({ type: "error", msg: "Key is required." });
-                  return;
-                }
-                if (!newTitle.trim()) {
-                  setAddStatus({ type: "error", msg: "Title is required." });
-                  return;
-                }
-                if (addJsonErr) {
-                  setAddStatus({
-                    type: "error",
-                    msg: "Fix JSON errors before saving.",
+            <div className="flex items-center gap-2">
+              <button
+                disabled={isSaving}
+                className={primaryBtnClass}
+                onClick={() => {
+                  if (!newKey.trim()) {
+                    setAddStatus({ type: "error", msg: "Key is required." });
+                    return;
+                  }
+                  if (!newTitle.trim()) {
+                    setAddStatus({
+                      type: "error",
+                      msg: "Title is required.",
+                    });
+                    return;
+                  }
+                  if (addJsonErr) {
+                    setAddStatus({
+                      type: "error",
+                      msg: "Fix JSON errors before saving.",
+                    });
+                    return;
+                  }
+                  if (siteContents.some((s) => s.key === newKey.trim())) {
+                    setAddStatus({
+                      type: "error",
+                      msg: `Key "${newKey.trim()}" already exists.`,
+                    });
+                    return;
+                  }
+                  saveAction(async () => {
+                    if (!supabase) return;
+                    const { error } = await supabase
+                      .from("site_content")
+                      .insert({
+                        key: newKey.trim(),
+                        title: newTitle.trim(),
+                        content: newContent,
+                      });
+                    if (error) throw error;
+                    setAddStatus({
+                      type: "success",
+                      msg: "Content block added!",
+                    });
+                    setNewKey("");
+                    setNewTitle("");
+                    setNewContent({});
+                    setAddJsonText("{}");
+                    setAddOpen(false);
                   });
-                  return;
-                }
-                if (siteContents.some((s) => s.key === newKey.trim())) {
-                  setAddStatus({
-                    type: "error",
-                    msg: `Key "${newKey.trim()}" already exists.`,
-                  });
-                  return;
-                }
-                saveAction(async () => {
-                  if (!supabase) return;
-                  const { error } = await supabase.from("site_content").insert({
-                    key: newKey.trim(),
-                    title: newTitle.trim(),
-                    content: newContent,
-                  });
-                  if (error) throw error;
-                  setAddStatus({
-                    type: "success",
-                    msg: "Content block added!",
-                  });
-                  setNewKey("");
-                  setNewTitle("");
-                  setNewContent({});
-                  setAddJsonText("{}");
-                  setAddOpen(false);
-                });
-              }}
-            >
-              {isSaving ? "Saving…" : "Add Content Block"}
-            </button>
+                }}
+              >
+                {isSaving ? "Saving…" : "Add Content Block"}
+              </button>
+              <button
+                type="button"
+                className={secondaryBtnClass}
+                onClick={() => setAddOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <>
+          {/* Search */}
+          <input
+            className={`${inputClass} mb-4`}
+            placeholder="Search site content…"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
 
-      {/* Search */}
-      <input
-        className={`${inputClass} mb-4`}
-        placeholder="Search site content…"
-        value={search}
-        onChange={(e) => {
-          setSearch(e.target.value);
-          setCurrentPage(1);
-        }}
-      />
+          {/* ── Content list (Preview-First Design) ────────────────────────── */}
+          <div className="space-y-4">
+            {pageItems.map((c) => (
+              <div
+                key={c.id}
+                className={`rounded-xl border overflow-hidden transition-all ${
+                  expandedId === c.id
+                    ? "border-blue/40 shadow-lg"
+                    : "border-gray-3 hover:border-blue/20"
+                } bg-white`}
+              >
+                {editingId === c.id ? (
+                  /* ── Full Edit Mode ────────────────────────────────────── */
+                  <div className="p-4 space-y-4">
+                    {editStatus && <StatusBanner status={editStatus} />}
 
-      {/* ── Content list ──────────────────────────────────────────────── */}
-      <div className="space-y-3">
-        {pageItems.map((c) => (
-          <div
-            key={c.id}
-            className="rounded-xl border border-gray-3 bg-white overflow-hidden"
-          >
-            {editingId === c.id ? (
-              /* ── Edit mode ─────────────────────────────────────────── */
-              <div className="p-4 space-y-4">
-                {editStatus && <StatusBanner status={editStatus} />}
+                    {/* Key badge (read-only) */}
+                    <div className="flex items-center gap-2 rounded-lg bg-gray-1 border border-gray-3 px-3 py-2">
+                      <span className="text-xs text-dark-4">Key:</span>
+                      <code className="text-xs text-blue font-mono">
+                        {c.key}
+                      </code>
+                      <span className="ml-auto text-[10px] text-dark-4 bg-gray-2 px-1.5 py-0.5 rounded">
+                        read-only
+                      </span>
+                    </div>
 
-                {/* Key badge (read-only) */}
-                <div className="flex items-center gap-2 rounded-lg bg-gray-1 border border-gray-3 px-3 py-2">
-                  <span className="text-xs text-dark-4">Key:</span>
-                  <code className="text-xs text-blue font-mono">{c.key}</code>
-                  <span className="ml-auto text-[10px] text-dark-4 bg-gray-2 px-1.5 py-0.5 rounded">
-                    read-only
-                  </span>
-                </div>
-
-                {/* Title */}
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-dark">
-                    Title
-                  </label>
-                  <input
-                    className={inputClass}
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                  />
-                </div>
-
-                {/* Content editor */}
-                <div className="rounded-xl border border-gray-3 bg-gray-1/50 p-3 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-dark-4">
-                      Content Fields
-                    </p>
-                    <ModeToggle
-                      mode={editMode}
-                      onForm={() => {
-                        if (editJsonErr) {
-                          setEditStatus({
-                            type: "error",
-                            msg: "Fix JSON errors before switching.",
-                          });
-                          return;
-                        }
-                        try {
-                          setEditContent(JSON.parse(editJsonText));
-                          setEditMode("form");
-                        } catch {
-                          setEditStatus({
-                            type: "error",
-                            msg: "Invalid JSON.",
-                          });
-                        }
-                      }}
-                      onJson={() => {
-                        setEditJsonText(JSON.stringify(editContent, null, 2));
-                        setEditMode("json");
-                      }}
-                    />
-                  </div>
-
-                  {editMode === "form" ? (
-                    <ContentObjectEditor
-                      content={editContent}
-                      onChange={(updated) => {
-                        setEditContent(updated);
-                        setEditJsonText(JSON.stringify(updated, null, 2));
-                      }}
-                    />
-                  ) : (
+                    {/* Title */}
                     <div className="space-y-1">
-                      <textarea
-                        className={`${inputClass} font-mono text-xs min-h-[160px]`}
-                        value={editJsonText}
-                        onChange={(e) => {
-                          setEditJsonText(e.target.value);
-                          try {
-                            setEditContent(JSON.parse(e.target.value));
-                            setEditJsonErr("");
-                          } catch {
-                            setEditJsonErr("Invalid JSON");
-                          }
-                        }}
+                      <label className="block text-sm font-medium text-dark">
+                        Title
+                      </label>
+                      <input
+                        className={inputClass}
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
                       />
-                      {editJsonErr && (
-                        <p className="text-xs text-red">{editJsonErr}</p>
+                    </div>
+
+                    {/* Content editor */}
+                    <div className="rounded-xl border border-gray-3 bg-gray-1/50 p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-dark-4">
+                          Content Fields
+                        </p>
+                        <ModeToggle
+                          mode={editMode}
+                          onForm={() => {
+                            if (editJsonErr) {
+                              setEditStatus({
+                                type: "error",
+                                msg: "Fix JSON errors before switching.",
+                              });
+                              return;
+                            }
+                            try {
+                              setEditContent(JSON.parse(editJsonText));
+                              setEditMode("form");
+                            } catch {
+                              setEditStatus({
+                                type: "error",
+                                msg: "Invalid JSON.",
+                              });
+                            }
+                          }}
+                          onJson={() => {
+                            setEditJsonText(
+                              JSON.stringify(editContent, null, 2),
+                            );
+                            setEditMode("json");
+                          }}
+                        />
+                      </div>
+
+                      {editMode === "form" ? (
+                        <ContentObjectEditor
+                          content={editContent}
+                          onChange={(updated) => {
+                            setEditContent(updated);
+                            setEditJsonText(JSON.stringify(updated, null, 2));
+                          }}
+                        />
+                      ) : (
+                        <div className="space-y-1">
+                          <textarea
+                            className={`${inputClass} font-mono text-xs min-h-[160px]`}
+                            value={editJsonText}
+                            onChange={(e) => {
+                              setEditJsonText(e.target.value);
+                              try {
+                                setEditContent(JSON.parse(e.target.value));
+                                setEditJsonErr("");
+                              } catch {
+                                setEditJsonErr("Invalid JSON");
+                              }
+                            }}
+                          />
+                          {editJsonErr && (
+                            <p className="text-xs text-red">{editJsonErr}</p>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
 
-                <div className="flex gap-2">
-                  <button
-                    className={primaryBtnClass}
-                    disabled={isSaving}
-                    onClick={() => {
-                      if (!editTitle.trim()) {
-                        setEditStatus({
-                          type: "error",
-                          msg: "Title is required.",
-                        });
-                        return;
-                      }
-                      if (editJsonErr) {
-                        setEditStatus({
-                          type: "error",
-                          msg: "Fix JSON errors before saving.",
-                        });
-                        return;
-                      }
-                      saveAction(async () => {
-                        if (!supabase) return;
-                        const { error } = await supabase
-                          .from("site_content")
-                          .update({
-                            title: editTitle,
-                            content: editContent,
-                          })
-                          .eq("id", c.id);
-                        if (error) throw error;
-                        setEditStatus({
-                          type: "success",
-                          msg: "Updated successfully!",
-                        });
-                        cancelEdit();
-                      });
-                    }}
-                  >
-                    {isSaving ? "Saving…" : "Save"}
-                  </button>
-                  <button className={secondaryBtnClass} onClick={cancelEdit}>
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* ── Read mode ─────────────────────────────────────────── */
-              <div>
-                {/* Header row */}
-                <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-gray-3">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-dark text-sm">{c.title}</p>
-                    <code className="text-xs text-blue font-mono">{c.key}</code>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                    <button
-                      type="button"
-                      className="text-xs font-medium text-dark-4 border border-gray-3 rounded-lg px-3 py-1.5 hover:bg-gray-1 transition"
-                      onClick={() =>
-                        setPreviewId(previewId === c.id ? null : c.id)
-                      }
-                    >
-                      {previewId === c.id ? "Hide Preview" : "Preview"}
-                    </button>
-                    <button
-                      className={primaryBtnClass}
-                      onClick={() => startEdit(c)}
-                    >
-                      Edit
-                    </button>
-                    {pendingDelete === `content-${c.id}` ? (
-                      <>
-                        <button
-                          className="inline-flex items-center justify-center rounded-xl bg-red px-3 py-2 text-sm font-medium text-white hover:bg-red/90 disabled:opacity-60 transition"
-                          disabled={isSaving}
-                          onClick={() =>
-                            saveAction(async () => {
-                              if (!supabase) return;
-                              const { error } = await supabase
-                                .from("site_content")
-                                .delete()
-                                .eq("id", c.id);
-                              if (error) throw error;
-                              setPendingDelete(null);
-                            })
-                          }
-                        >
-                          Confirm Delete
-                        </button>
-                        <button
-                          className={secondaryBtnClass}
-                          onClick={() => setPendingDelete(null)}
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
+                    <div className="flex gap-2">
                       <button
-                        className="inline-flex items-center justify-center rounded-xl bg-red px-3 py-2 text-sm font-medium text-white hover:bg-red/90 disabled:opacity-60 transition"
+                        className={primaryBtnClass}
                         disabled={isSaving}
-                        onClick={() => setPendingDelete(`content-${c.id}`)}
+                        onClick={() => {
+                          if (!editTitle.trim()) {
+                            setEditStatus({
+                              type: "error",
+                              msg: "Title is required.",
+                            });
+                            return;
+                          }
+                          if (editJsonErr) {
+                            setEditStatus({
+                              type: "error",
+                              msg: "Fix JSON errors before saving.",
+                            });
+                            return;
+                          }
+                          saveAction(async () => {
+                            if (!supabase) return;
+                            const { error } = await supabase
+                              .from("site_content")
+                              .update({
+                                title: editTitle,
+                                content: editContent,
+                              })
+                              .eq("id", c.id);
+                            if (error) throw error;
+                            setEditStatus({
+                              type: "success",
+                              msg: "Updated successfully!",
+                            });
+                            cancelEdit();
+                          });
+                        }}
                       >
-                        Delete
+                        {isSaving ? "Saving…" : "Save"}
                       </button>
-                    )}
+                      <button
+                        className={secondaryBtnClass}
+                        onClick={cancelEdit}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  /* ── Preview-First Read Mode (Expandable) ──────────────── */
+                  <div
+                    className="cursor-pointer transition"
+                    onClick={() =>
+                      setExpandedId(expandedId === c.id ? null : c.id)
+                    }
+                  >
+                    {/* Preview Section - Primary Focal Point */}
+                    <div className="p-4 space-y-3">
+                      {/* Header with Title & Key */}
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-dark text-base">
+                            {c.title}
+                          </p>
+                          <code className="text-xs text-blue font-mono">
+                            {c.key}
+                          </code>
+                        </div>
+                        <div className="text-lg text-dark-4 shrink-0">
+                          {expandedId === c.id ? "▼" : "▶"}
+                        </div>
+                      </div>
 
-                {/* Field summary table */}
-                <div className="px-4 py-3">
-                  <ContentFieldSummary content={c.content || {}} />
-                </div>
+                      {/* Rendered Preview - Main Visual Content */}
+                      <div className="rounded-lg bg-gradient-to-br from-gray-1/60 to-white border border-gray-2 p-3 min-h-[80px] flex items-center">
+                        <ContentPreview
+                          contentKey={c.key}
+                          content={c.content || {}}
+                        />
+                      </div>
+                    </div>
 
-                {/* Preview panel */}
-                {previewId === c.id && (
-                  <div className="px-4 pb-4 border-t border-dashed border-gray-3 pt-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-dark-4 mb-3">
-                      Rendered Preview
-                    </p>
-                    <ContentPreview
-                      contentKey={c.key}
-                      content={c.content || {}}
-                    />
+                    {/* Expanded Details Section */}
+                    {expandedId === c.id && (
+                      <div className="border-t border-gray-3 space-y-3 p-4 bg-gray-1/20">
+                        {/* Field Summary */}
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-dark-4 mb-2">
+                            Content Summary
+                          </p>
+                          <ContentFieldSummary content={c.content || {}} />
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 pt-2 border-t border-gray-3">
+                          <button
+                            className={primaryBtnClass}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startEdit(c);
+                            }}
+                          >
+                            Edit Content
+                          </button>
+                          <button
+                            type="button"
+                            className="text-xs font-medium text-red border border-red/30 rounded-lg px-3 py-1.5 hover:bg-red/5 transition"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`Delete "${c.title}"?`)) {
+                                saveAction(async () => {
+                                  if (!supabase) return;
+                                  const { error } = await supabase
+                                    .from("site_content")
+                                    .delete()
+                                    .eq("id", c.id);
+                                  if (error) throw error;
+                                });
+                              }
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
+            ))}
+
+            {!pageItems.length && (
+              <p className="text-sm text-dark-4 py-6 text-center">
+                No content blocks found.
+              </p>
             )}
           </div>
-        ))}
 
-        {!pageItems.length && (
-          <p className="text-sm text-dark-4 py-6 text-center">
-            No content blocks found.
-          </p>
-        )}
-      </div>
-
-      <Pager
-        totalPages={totalPages}
-        currentPage={safePage}
-        onPageChange={setCurrentPage}
-      />
+          <Pager
+            totalPages={totalPages}
+            currentPage={safePage}
+            onPageChange={setCurrentPage}
+          />
+        </>
+      )}
     </div>
   );
 };

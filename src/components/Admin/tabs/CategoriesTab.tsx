@@ -90,7 +90,7 @@ export const CategoriesTab = ({
             </label>
             <input
               className={inputClass}
-              placeholder="e.g. Electronics"
+              placeholder="e.g. Women's Fashion"
               value={newCategory.title}
               onChange={(e) =>
                 setNewCategory((v) => ({ ...v, title: e.target.value }))
@@ -103,7 +103,7 @@ export const CategoriesTab = ({
             </label>
             <input
               className={inputClass}
-              placeholder="e.g. /images/categories/electronics.jpg"
+              placeholder="e.g. /images/categories/womens-fashion.jpg"
               value={newCategory.img}
               onChange={(e) =>
                 setNewCategory((v) => ({ ...v, img: e.target.value }))

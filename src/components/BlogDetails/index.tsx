@@ -34,51 +34,47 @@ const BlogDetails = () => {
             </span>
 
             <h2 className="font-medium text-dark text-xl lg:text-2xl xl:text-custom-4xl mb-4">
-              What information is needed for shipping?
+              How to Build a Fashion-First Shopping Experience
             </h2>
 
             <p className="mb-6">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer
-              sit amet eros ac ipsum egestas dapibus. Vivamus gravida, ex non
-              placerat tincidunt, lorem felis facilisis tellus, vitae bibendum
-              purus felis eget tellus. In non rutrum ipsum. Morbi ut dui ante.
+              A great fashion storefront starts with clear category structure,
+              authentic product imagery, and consistent fit guidance. When
+              shoppers can quickly compare silhouettes, colors, and materials,
+              they discover products faster and buy with more confidence.
             </p>
 
             <p className="mb-6">
-              Nunc faucibus libero sem, quis placerat nisl pellentesque eget.
-              Morbi porta velit ut leo sollicitudin, a faucibus purus faucibus.
-              Maecenas mollis dui nec metus euismod, sed aliquam risus luctus.
+              Merchandising should balance trend-driven highlights and wardrobe
+              essentials. Featuring women, men, kids, and accessories in one
+              cohesive flow helps families shop together without friction.
             </p>
 
             <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-              eiusmod tempor incididunt ut labore et dolore magna aliqua. Quis
-              enim lobortis scelerisque fermentum. Neque sodales ut etiam sit
-              amet. Ligula ullamcorper malesuada proin libero nunc consequat
-              interdum varius. Quam pellentesque nec nam aliquam sem et tortor
-              consequat.
+              Trust is built through detail: precise sizing notes, care
+              instructions, and real-world styling suggestions. These small
+              content upgrades reduce returns, increase repeat orders, and make
+              your brand feel curated instead of generic.
             </p>
 
             <div className="mt-7.5">
               <h3 className="font-medium text-dark text-lg xl:text-[26px] xl:leading-[34px] mb-6">
-                Digital marketplace for Ui/Ux designers.
+                Key Elements of a High-Converting Fashion Catalog
               </h3>
 
               <ul className="list-disc pl-6">
-                <li>Consectetur adipiscing elit in voluptate velit.</li>
-                <li>Mattis vulputate cupidatat.</li>
-                <li>
-                  Vulputate enim nulla aliquet porttitor odio pellentesque
-                </li>
-                <li>Ligula ullamcorper malesuada proin</li>
+                <li>Use trend-led hero blocks with seasonal promotions.</li>
+                <li>Show complete looks with accessory recommendations.</li>
+                <li>Highlight fit, fabric, and care details on every PDP.</li>
+                <li>Keep checkout pricing transparent and mobile-friendly.</li>
               </ul>
             </div>
 
             <div className="rounded-xl bg-white pt-7.5 pb-6 px-4 sm:px-7.5 my-7.5">
               <p className="italic text-dark text-center">
-                ‘‘Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
-                do eiusmod incididunt utionals labore et dolore magna aliqua
-                quis fermentum,,
+                "Style should feel effortless. When product data, visuals, and
+                messaging are aligned, customers move from discovery to checkout
+                with confidence."
               </p>
 
               <a
@@ -95,38 +91,34 @@ const BlogDetails = () => {
                 </div>
 
                 <div>
-                  <h4 className="text-dark text-custom-sm">Jhon Drineo</h4>
-                  <p className="text-custom-xs">Entroprenor</p>
+                  <h4 className="text-dark text-custom-sm">Amina Yusuf</h4>
+                  <p className="text-custom-xs">Fashion Entrepreneur</p>
                 </div>
               </a>
             </div>
 
             <p className="mb-6">
-              consectetur adipiscing elit in voluptate velit esse cillum dolore
-              eu fugiat nulla pariatur. Excepteur sint occaecat mattis vulputate
-              cupidatat.
+              Smart collection planning also helps with inventory velocity.
+              Limited drops, evergreen basics, and coordinated outfit bundles
+              give customers multiple reasons to add more items to cart.
             </p>
 
             <p className="mb-6">
-              Nunc faucibus libero sem, quis placerat nisl pellentesque eget.
-              Morbi porta velit ut leo sollicitudin, a faucibus purus faucibus.
-              Maecenas mollis dui nec metus euismod, sed aliquam risus luctus.
+              Finally, keep your content fresh. Updating blog stories, product
+              badges, and campaign copy to reflect seasonality ensures your
+              storefront always feels alive and relevant.
             </p>
 
             <p className="mb-6">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-              eiusmod tempor incididunt ut labore et dolore magna aliqua. Quis
-              enim lobortis scelerisque fermentum. Neque sodales ut etiam sit
-              amet. Ligula ullamcorper malesuada proin libero nunc consequat
-              interdum varius. Quam pellentesque nec nam aliquam sem et tortor
-              consequat.
+              For growth, blend data and creativity. Use analytics to identify
+              top-performing categories, then support them with editorials,
+              testimonials, and social-proof moments across the journey.
             </p>
 
             <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer
-              sit amet eros ac ipsum egestas dapibus. Vivamus gravida, ex non
-              placerat tincidunt, lorem felis facilisis tellus, vitae bibendum
-              purus felis eget tellus. In non rutrum ipsum. Morbi ut dui ante.
+              The result is a modern fashion commerce experience that feels
+              premium, practical, and easy to shop for women, men, kids, and
+              accessories in one place.
             </p>
 
             <div className="flex flex-wrap items-center justify-between gap-10 mt-10">
@@ -139,7 +131,7 @@ const BlogDetails = () => {
                       className="inline-flex hover:text-white border border-gray-3 bg-white py-2 px-4 rounded-md ease-out duration-200 hover:bg-blue hover:border-blue"
                       href="#"
                     >
-                      Desktop
+                      Women's Fashion
                     </a>
                   </li>
 
@@ -148,7 +140,7 @@ const BlogDetails = () => {
                       className="inline-flex hover:text-white border border-gray-3 bg-white py-2 px-4 rounded-md ease-out duration-200 hover:bg-blue hover:border-blue"
                       href="#"
                     >
-                      Macbook
+                      Accessories
                     </a>
                   </li>
 
@@ -157,7 +149,7 @@ const BlogDetails = () => {
                       className="inline-flex hover:text-white border border-gray-3 bg-white py-2 px-4 rounded-md ease-out duration-200 hover:bg-blue hover:border-blue"
                       href="#"
                     >
-                      PC
+                      Footwear
                     </a>
                   </li>
                 </ul>

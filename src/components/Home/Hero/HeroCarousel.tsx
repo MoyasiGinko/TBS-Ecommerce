@@ -23,21 +23,21 @@ type HeroMainSlide = {
 const defaultSlides: HeroMainSlide[] = [
   {
     salePercent: "30%",
-    title: "True Wireless Noise Cancelling Headphone",
-    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    title: "Women's Collection",
+    description: "Explore our curated selection of elegant dresses, blazers, and essentials.",
     ctaLabel: "Shop Now",
     href: "/shop-with-sidebar",
     ctaHref: "/shop-with-sidebar",
     image: "/images/hero/hero-01.png",
   },
   {
-    salePercent: "25%",
-    title: "Apple iPhone 14 Plus",
+    salePercent: "40%",
+    title: "Men's Style Edit",
     description:
-      "Powerful performance with all-day battery life and a brilliant display.",
-    ctaLabel: "View Product",
-    href: "/shop-details",
-    ctaHref: "/shop-details",
+      "Premium menswear collection featuring tailored pieces and casual essentials.",
+    ctaLabel: "View Collection",
+    href: "/shop-with-sidebar",
+    ctaHref: "/shop-with-sidebar",
     image: "/images/hero/hero-02.png",
   },
 ];

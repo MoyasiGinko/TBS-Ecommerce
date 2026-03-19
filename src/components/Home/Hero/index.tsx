@@ -17,18 +17,18 @@ type HeroSideCard = {
 
 const defaultCards: HeroSideCard[] = [
   {
-    title: "iPhone 14 Plus & 14 Pro Max",
+    title: "Kids' New Arrivals",
     caption: "limited time offer",
-    price: "$699",
-    oldPrice: "$999",
+    price: "$29",
+    oldPrice: "$49",
     image: "/images/hero/hero-02.png",
     href: "/shop-details",
   },
   {
-    title: "Wireless Headphone",
+    title: "Premium Accessories",
     caption: "limited time offer",
-    price: "$699",
-    oldPrice: "$999",
+    price: "$59",
+    oldPrice: "$99",
     image: "/images/hero/hero-01.png",
     href: "/shop-details",
   },

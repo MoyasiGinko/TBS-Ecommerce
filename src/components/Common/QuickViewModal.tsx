@@ -303,8 +303,8 @@ const QuickViewModal = () => {
               </div>
 
               <p>
-                Lorem Ipsum is simply dummy text of the printing and typesetting
-                industry. Lorem Ipsum has.
+                Discover premium fabrics, versatile fits, and timeless styling
+                details designed for everyday comfort and confident looks.
               </p>
 
               <div className="flex flex-wrap justify-between gap-5 mt-6 mb-7.5">
