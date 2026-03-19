@@ -12,28 +12,36 @@ const BlogGridWithSidebar = async () => {
 
   const categories = [
     {
-      name: "Desktop",
-      products: 10,
+      name: "Women's Fashion",
+      products: 25,
     },
     {
-      name: "Laptop",
+      name: "Men's Fashion",
+      products: 18,
+    },
+    {
+      name: "Kids' Wear",
       products: 12,
     },
     {
-      name: "Monitor",
-      products: 30,
+      name: "Accessories",
+      products: 22,
     },
     {
-      name: "UPS",
-      products: 23,
+      name: "Footwear",
+      products: 16,
     },
     {
-      name: "Phone",
-      products: 10,
+      name: "Bags & Wallets",
+      products: 14,
     },
     {
-      name: "Watch",
-      products: 13,
+      name: "Activewear",
+      products: 19,
+    },
+    {
+      name: "Unisex Fashion",
+      products: 11,
     },
   ];
 
@@ -197,56 +205,56 @@ const BlogGridWithSidebar = async () => {
                       className="inline-flex hover:text-white border border-gray-3 py-2 px-4 rounded-md ease-out duration-200 hover:bg-blue hover:border-blue"
                       href="#"
                     >
-                      Desktop
+                      Dresses
                     </a>
 
                     <a
                       className="inline-flex hover:text-white border border-gray-3 py-2 px-4 rounded-md ease-out duration-200 hover:bg-blue hover:border-blue"
                       href="#"
                     >
-                      Macbook
+                      Blazers
                     </a>
 
                     <a
                       className="inline-flex hover:text-white border border-gray-3 py-2 px-4 rounded-md ease-out duration-200 hover:bg-blue hover:border-blue"
                       href="#"
                     >
-                      PC
+                      Jeans
                     </a>
 
                     <a
                       className="inline-flex hover:text-white border border-gray-3 py-2 px-4 rounded-md ease-out duration-200 hover:bg-blue hover:border-blue"
                       href="#"
                     >
-                      Watch
+                      Accessories
                     </a>
 
                     <a
                       className="inline-flex hover:text-white border border-gray-3 py-2 px-4 rounded-md ease-out duration-200 hover:bg-blue hover:border-blue"
                       href="#"
                     >
-                      USB Cable
+                      Footwear
                     </a>
 
                     <a
                       className="inline-flex hover:text-white border border-gray-3 py-2 px-4 rounded-md ease-out duration-200 hover:bg-blue hover:border-blue"
                       href="#"
                     >
-                      Mouse
+                      Boots
                     </a>
 
                     <a
                       className="inline-flex hover:text-white border border-gray-3 py-2 px-4 rounded-md ease-out duration-200 hover:bg-blue hover:border-blue"
                       href="#"
                     >
-                      Windows PC
+                      Scarves
                     </a>
 
                     <a
                       className="inline-flex hover:text-white border border-gray-3 py-2 px-4 rounded-md ease-out duration-200 hover:bg-blue hover:border-blue"
                       href="#"
                     >
-                      Monitor
+                      Elegance
                     </a>
                   </div>
                 </div>

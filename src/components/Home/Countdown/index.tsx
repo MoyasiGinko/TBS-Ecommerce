@@ -17,9 +17,9 @@ type CountdownContent = {
 const defaultCountdown: CountdownContent = {
   deadline: "December, 31, 2026",
   tag: "Don’t Miss!!",
-  title: "Enhance Your Music Experience",
-  description: "The Havit H206d is a wired PC headphone.",
-  ctaLabel: "Check it Out!",
+  title: "End of Season Sale",
+  description: "Save up to 50% on your favorite fashion items and accessories.",
+  ctaLabel: "Shop Now!",
   ctaHref: "#",
   image: "/images/countdown/countdown-01.png",
 };

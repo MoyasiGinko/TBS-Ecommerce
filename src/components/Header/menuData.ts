@@ -3,23 +3,37 @@ import { Menu } from "@/types/Menu";
 export const menuData: Menu[] = [
   {
     id: 1,
-    title: "Popular",
+    title: "Women",
     newTab: false,
-    path: "/",
+    path: "/shop-with-sidebar",
     hidden: false,
   },
   {
     id: 2,
-    title: "Shop",
+    title: "Men",
     newTab: false,
     path: "/shop-with-sidebar",
     hidden: false,
   },
   {
     id: 3,
-    title: "Contact",
+    title: "Kids",
     newTab: false,
-    path: "/contact",
+    path: "/shop-with-sidebar",
+    hidden: false,
+  },
+  {
+    id: 4,
+    title: "Accessories",
+    newTab: false,
+    path: "/shop-with-sidebar",
+    hidden: false,
+  },
+  {
+    id: 5,
+    title: "Sale",
+    newTab: false,
+    path: "/shop-with-sidebar",
     hidden: false,
   },
   {

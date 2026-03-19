@@ -626,7 +626,7 @@ export const ProductsTab = ({
               </label>
               <input
                 className={inputClass}
-                placeholder="e.g. Apple iPhone 15 Pro Max"
+                placeholder="e.g. Tailored Linen Blazer"
                 value={newProduct.title}
                 onChange={(e) =>
                   setNewProduct((v) => ({ ...v, title: e.target.value }))
@@ -643,7 +643,7 @@ export const ProductsTab = ({
                 className={inputClass}
                 type="number"
                 min="0"
-                placeholder="e.g. 128"
+                placeholder="e.g. 42"
                 value={newProduct.reviews || ""}
                 onChange={(e) =>
                   setNewProduct((v) => ({
@@ -664,7 +664,7 @@ export const ProductsTab = ({
                 type="number"
                 min="0"
                 step="0.01"
-                placeholder="e.g. 1299.99"
+                placeholder="e.g. 129.00"
                 value={newProduct.price || ""}
                 onChange={(e) =>
                   setNewProduct((v) => ({
@@ -685,7 +685,7 @@ export const ProductsTab = ({
                 type="number"
                 min="0"
                 step="0.01"
-                placeholder="e.g. 999.99"
+                placeholder="e.g. 99.00"
                 value={newProduct.discounted_price || ""}
                 onChange={(e) =>
                   setNewProduct((v) => ({
@@ -776,7 +776,7 @@ export const ProductsTab = ({
               </label>
               <input
                 className={inputClass}
-                placeholder="e.g. Apple, Samsung, Nike"
+                placeholder="e.g. Urban Loom, North Lane, Maison Vale"
                 value={newProduct.details.brand}
                 onChange={(e) =>
                   setNewProduct((v) => ({
@@ -794,7 +794,7 @@ export const ProductsTab = ({
               </label>
               <input
                 className={inputClass}
-                placeholder="e.g. A2897 or SKU-00123"
+                placeholder="e.g. LIN-BLZR-11 or SKU-FASH-001"
                 value={newProduct.details.model}
                 onChange={(e) =>
                   setNewProduct((v) => ({
@@ -851,7 +851,7 @@ export const ProductsTab = ({
               </label>
               <input
                 className={inputClass}
-                placeholder="e.g. 5G Ready, 48MP Camera, 4K Video"
+                placeholder="e.g. Breathable fabric, Tailored fit, Easy care"
                 value={newProduct.details.highlights}
                 onChange={(e) =>
                   setNewProduct((v) => ({
@@ -959,7 +959,7 @@ export const ProductsTab = ({
               </label>
               <textarea
                 className={`${inputClass} min-h-[80px]`}
-                placeholder="Key specs overview, e.g. OS: iOS 17 | Storage: 256GB | RAM: 8GB"
+                placeholder="Key specs overview, e.g. Material: Linen blend | Fit: Slim | Sizes: S-XL"
                 value={newProduct.details.specificationSummary}
                 onChange={(e) =>
                   setNewProduct((v) => ({

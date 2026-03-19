@@ -151,7 +151,7 @@ export const OrdersTab = ({
             </label>
             <input
               className={inputClass}
-              placeholder="e.g. iPhone 15 Pro + Case"
+              placeholder="e.g. Floral Midi Dress + Accessories"
               value={newOrder.title}
               onChange={(e) =>
                 setNewOrder((v) => ({ ...v, title: e.target.value }))

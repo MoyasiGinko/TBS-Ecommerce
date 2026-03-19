@@ -6,38 +6,43 @@ import { Order } from "@/types/order";
 
 const defaultDetails = {
   rating: 4.7,
-  category: "Electronics",
+  category: "Fashion",
   shortDescription:
-    "A premium product sourced from the catalog with live pricing, gallery images, and configurable options.",
+    "A premium fashion piece sourced from our curated collection with live pricing, gallery images, and configurable options.",
   description:
     "This product is managed in the database and displayed consistently across the storefront, quick actions, and the product details page.",
   availability: "In Stock",
-  badge: "SALE 20% OFF",
-  promoText: "Sales 30% Off Use Code: PROMO30",
-  brand: "TBS",
+  badge: "SALE 25% OFF",
+  promoText: "Limited Time: 25% Off Use Code: STYLE25",
+  brand: "Urban Loom",
   model: "Standard",
-  colors: ["#ef4444", "#3b82f6", "#f97316", "#ec4899"],
-  highlights: ["Free delivery available", "Sales 30% Off Use Code: PROMO30"],
+  colors: ["#111827", "#3C50E0", "#EF4444", "#F97316"],
+  highlights: ["Free shipping on orders $75+", "30-day returns", "Premium quality fabric"],
   specificationSummary:
-    "Built for daily use with dependable performance, quality materials, and storefront-ready merchandising content.",
+    "Crafted with quality materials and attention to detail for everyday wear and special occasions.",
   careInstructions:
-    "Handle with care, keep dry, and follow the included maintenance guidance to preserve finish and performance.",
+    "Machine wash cold, hang dry, and follow garment care label for best results.",
   additionalInformation: [
-    { label: "Brand", value: "TBS" },
-    { label: "Model", value: "Standard" },
-    { label: "Category", value: "Electronics" },
+    { label: "Brand", value: "Urban Loom" },
+    { label: "Category", value: "Fashion" },
+    { label: "Material", value: "Premium Blend" },
   ],
   optionsGroup1: [
-    { id: "standard", title: "Standard" },
-    { id: "premium", title: "Premium" },
+    { id: "xs", title: "XS" },
+    { id: "s", title: "S" },
+    { id: "m", title: "M" },
+    { id: "l", title: "L" },
+    { id: "xl", title: "XL" },
   ],
   optionsGroup2: [
-    { id: "regular", title: "Regular" },
-    { id: "deluxe", title: "Deluxe" },
+    { id: "regular", title: "Regular Fit" },
+    { id: "slim", title: "Slim Fit" },
+    { id: "oversized", title: "Oversized Fit" },
   ],
   optionsGroup3: [
-    { id: "default", title: "Default" },
-    { id: "plus", title: "Plus" },
+    { id: "cotton", title: "Cotton" },
+    { id: "denim", title: "Denim" },
+    { id: "linen", title: "Linen" },
   ],
 };
 
@@ -68,13 +73,14 @@ const createFallbackProduct = (
 
 export const fallbackProducts: Product[] = [
   createFallbackProduct({
-    title: "Havit HV-G69 USB Gamepad",
-    reviews: 15,
-    price: 59.0,
-    discountedPrice: 29.0,
+    title: "Floral Midi Dress",
+    reviews: 42,
+    rating: 4.8,
+    price: 89.0,
+    discountedPrice: 59.0,
     id: 1,
-    brand: "Havit",
-    category: "Gaming Accessories",
+    brand: "Urban Loom",
+    category: "Women's Fashion",
     imgs: {
       thumbnails: [
         "/images/products/product-1-sm-1.png",
@@ -87,26 +93,26 @@ export const fallbackProducts: Product[] = [
     },
   }),
   createFallbackProduct({
-    title: "iPhone 14 Plus , 6/128GB",
-    reviews: 5,
-    rating: 4.9,
-    price: 899.0,
+    title: "Tailored Linen Blazer",
+    reviews: 28,
+    rating: 4.7,
+    price: 129.0,
     discountedPrice: 99.0,
     id: 2,
-    brand: "Apple",
-    category: "Smartphones",
+    brand: "North Lane",
+    category: "Men's Fashion",
     optionsGroup1: [
-      { id: "128gb", title: "128 GB" },
-      { id: "256gb", title: "256 GB" },
-      { id: "512gb", title: "512 GB" },
+      { id: "s", title: "S" },
+      { id: "m", title: "M" },
+      { id: "l", title: "L" },
+      { id: "xl", title: "XL" },
     ],
     optionsGroup2: [
-      { id: "active", title: "Active" },
-      { id: "inactive", title: "Inactive" },
+      { id: "regular", title: "Regular Fit" },
+      { id: "slim", title: "Slim Fit" },
     ],
     optionsGroup3: [
-      { id: "dual", title: "Dual" },
-      { id: "e-sim", title: "E Sim" },
+      { id: "linen", title: "Linen" },
     ],
     imgs: {
       thumbnails: [
@@ -120,13 +126,14 @@ export const fallbackProducts: Product[] = [
     },
   }),
   createFallbackProduct({
-    title: "Apple iMac M1 24-inch 2021",
-    reviews: 5,
-    price: 59.0,
-    discountedPrice: 29.0,
+    title: "Kids Printed Hoodie Set",
+    reviews: 37,
+    rating: 4.6,
+    price: 69.0,
+    discountedPrice: 49.0,
     id: 3,
-    brand: "Apple",
-    category: "Desktop Computers",
+    brand: "Little Drift",
+    category: "Kids' Wear",
     imgs: {
       thumbnails: [
         "/images/products/product-3-sm-1.png",
@@ -139,13 +146,14 @@ export const fallbackProducts: Product[] = [
     },
   }),
   createFallbackProduct({
-    title: "MacBook Air M1 chip, 8/256GB",
-    reviews: 6,
-    price: 59.0,
-    discountedPrice: 29.0,
+    title: "Classic Straight Jeans",
+    reviews: 51,
+    rating: 4.9,
+    price: 79.0,
+    discountedPrice: 55.0,
     id: 4,
-    brand: "Apple",
-    category: "Laptops",
+    brand: "Denim Republic",
+    category: "Men's Fashion",
     imgs: {
       thumbnails: [
         "/images/products/product-4-sm-1.png",
@@ -158,13 +166,14 @@ export const fallbackProducts: Product[] = [
     },
   }),
   createFallbackProduct({
-    title: "Apple Watch Ultra",
-    reviews: 3,
-    price: 99.0,
-    discountedPrice: 29.0,
+    title: "Leather Crossbody Bag",
+    reviews: 33,
+    rating: 4.8,
+    price: 119.0,
+    discountedPrice: 85.0,
     id: 5,
-    brand: "Apple",
-    category: "Wearables",
+    brand: "Maison Vale",
+    category: "Accessories",
     imgs: {
       thumbnails: [
         "/images/products/product-5-sm-1.png",
@@ -177,12 +186,13 @@ export const fallbackProducts: Product[] = [
     },
   }),
   createFallbackProduct({
-    title: "Logitech MX Master 3 Mouse",
-    reviews: 15,
-    price: 59.0,
-    discountedPrice: 29.0,
+    title: "Minimalist Analog Watch",
+    reviews: 21,
+    rating: 4.7,
+    price: 149.0,
+    discountedPrice: 109.0,
     id: 6,
-    brand: "Logitech",
+    brand: "Chrona",
     category: "Accessories",
     imgs: {
       thumbnails: [
@@ -196,13 +206,14 @@ export const fallbackProducts: Product[] = [
     },
   }),
   createFallbackProduct({
-    title: "Apple iPad Air 5th Gen - 64GB",
-    reviews: 15,
-    price: 59.0,
-    discountedPrice: 29.0,
+    title: "Unisex Cotton Overshirt",
+    reviews: 44,
+    rating: 4.8,
+    price: 74.0,
+    discountedPrice: 52.0,
     id: 7,
-    brand: "Apple",
-    category: "Tablets",
+    brand: "Threadline",
+    category: "Unisex Fashion",
     imgs: {
       thumbnails: [
         "/images/products/product-7-sm-1.png",
@@ -215,13 +226,14 @@ export const fallbackProducts: Product[] = [
     },
   }),
   createFallbackProduct({
-    title: "Asus RT Dual Band Router",
-    reviews: 15,
-    price: 59.0,
-    discountedPrice: 29.0,
+    title: "Running Sneakers Pro",
+    reviews: 39,
+    rating: 4.8,
+    price: 99.0,
+    discountedPrice: 69.0,
     id: 8,
-    brand: "Asus",
-    category: "Networking",
+    brand: "Stride Co",
+    category: "Footwear",
     imgs: {
       thumbnails: [
         "/images/products/product-8-sm-1.png",
@@ -239,107 +251,106 @@ export const fallbackBlogs: BlogItem[] = [
   {
     date: "Mar 27, 2022",
     views: 300000,
-    title: "How to Start a Successful E-commerce Business",
+    title: "2026 Women's Fashion Trends You Can Wear Every Day",
     img: "/images/blog/blog-01.jpg",
   },
   {
     date: "Mar 27, 2022",
     views: 250000,
-    title: "The Benefits of Regular Exercise for a Healthy Lifestyle",
+    title: "Men's Capsule Wardrobe: 12 Pieces for 30 Looks",
     img: "/images/blog/blog-02.jpg",
   },
   {
     date: "Mar 27, 2022",
     views: 180000,
-    title: "Exploring the Wonders of Modern Art: A Gallery Tour",
+    title: "Kids Style Guide: Comfortable Outfits for School & Play",
     img: "/images/blog/blog-03.jpg",
   },
   {
     date: "Mar 27, 2022",
     views: 50000,
-    title: "The Ultimate Guide to Traveling on a Budget",
+    title: "How to Choose the Perfect Bag for Work, Travel, and Weekends",
     img: "/images/blog/blog-04.jpg",
   },
   {
     date: "Mar 27, 2022",
     views: 120000,
-    title: "Cooking Masterclass: Creating Delicious Italian Pasta",
+    title: "Streetwear Meets Tailoring: The New Smart-Casual Formula",
     img: "/images/blog/blog-05.jpg",
   },
   {
     date: "Mar 27, 2022",
     views: 75000,
-    title: "Tech Trends 2022: What's Changing in the Digital World",
+    title: "Accessory Layering 101: Watches, Belts, and Minimal Jewelry",
     img: "/images/blog/blog-06.jpg",
   },
   {
     date: "Mar 27, 2022",
     views: 90000,
-    title: "A Guide to Sustainable Living: Reduce, Reuse, Recycle",
+    title: "Sustainable Fabrics Explained: Cotton, Linen, and Denim",
     img: "/images/blog/blog-07.jpg",
   },
   {
     date: "Mar 27, 2022",
     views: 150000,
-    title: "The Psychology of Happiness: Finding Joy in Everyday Life",
+    title: "How to Build Seasonal Looks on a Budget Without Compromise",
     img: "/images/blog/blog-08.jpg",
   },
   {
     date: "Mar 27, 2022",
     views: 60000,
-    title: "Exploring National Parks: Natural Beauty and Adventure",
+    title: "Sneaker Styling Ideas for Women, Men, and Kids",
     img: "/images/blog/blog-09.jpg",
   },
 ];
 
 export const fallbackCategories: Category[] = [
-  { title: "Televisions", id: 1, img: "/images/categories/categories-01.png" },
-  { title: "Laptop & PC", id: 2, img: "/images/categories/categories-02.png" },
+  { title: "Women's Fashion", id: 1, img: "/images/categories/categories-01.png" },
+  { title: "Men's Fashion", id: 2, img: "/images/categories/categories-02.png" },
   {
-    title: "Mobile & Tablets",
+    title: "Kids' Wear",
     id: 3,
     img: "/images/categories/categories-03.png",
   },
   {
-    title: "Games & Videos",
+    title: "Accessories",
     id: 4,
     img: "/images/categories/categories-04.png",
   },
   {
-    title: "Home Appliances",
+    title: "Footwear",
     id: 5,
     img: "/images/categories/categories-05.png",
   },
   {
-    title: "Health & Sports",
+    title: "Bags & Wallets",
     id: 6,
     img: "/images/categories/categories-06.png",
   },
-  { title: "Watches", id: 7, img: "/images/categories/categories-07.png" },
-  { title: "Televisions", id: 8, img: "/images/categories/categories-04.png" },
+  { title: "Activewear", id: 7, img: "/images/categories/categories-07.png" },
 ];
 
 export const fallbackTestimonials: Testimonial[] = [
   {
     review:
-      "Lorem ipsum dolor sit amet, adipiscing elit. Donec malesuada justo vitaeaugue suscipit beautiful vehicula",
-    authorName: "Davis Dorwart",
+      "I found complete family outfits on this platform! The variety spans from elegant dresses to casual kids wear. Quality is exceptional and delivery was incredibly fast.",
+    authorName: "Amina Yusuf",
     authorImg: "/images/users/user-01.jpg",
-    authorRole: "Serial Entrepreneur",
+    authorRole: "Fashion Entrepreneur",
   },
   {
     review:
-      "Lorem ipsum dolor sit amet, adipiscing elit. Donec malesuada justo vitaeaugue suscipit beautiful vehicula",
-    authorName: "Wilson Dias",
+      "The menswear edit is clean and versatile. The tailored blazer fits perfectly, and the jeans quality exceeds expectations. This is my go-to place for professional wardrobe pieces.",
+    authorName: "Daniel Okoro",
     authorImg: "/images/users/user-02.jpg",
-    authorRole: "Backend Developer",
+    authorRole: "Product Designer",
   },
   {
     review:
-      "Lorem ipsum dolor sit amet, adipiscing elit. Donec malesuada justo vitaeaugue suscipit beautiful vehicula",
-    authorName: "Miracle Exterm",
+      "From kids sets to accessories and seasonal collections, everything I need in one place. The styling suggestions and curated collections make shopping so easy.",
+    authorName: "Laila Mensah",
     authorImg: "/images/users/user-03.jpg",
-    authorRole: "Serial Entrepreneur",
+    authorRole: "Lifestyle Creator",
   },
 ];
 

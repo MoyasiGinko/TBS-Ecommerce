@@ -42,19 +42,39 @@ const rows = [
     title: "Header Menu",
     content: {
       items: [
-        { id: 1, title: "Popular", newTab: false, path: "/", hidden: false },
+        {
+          id: 1,
+          title: "Women",
+          newTab: false,
+          path: "/shop-with-sidebar",
+          hidden: false,
+        },
         {
           id: 2,
-          title: "Shop",
+          title: "Men",
           newTab: false,
           path: "/shop-with-sidebar",
           hidden: false,
         },
         {
           id: 3,
-          title: "Contact",
+          title: "Kids",
           newTab: false,
-          path: "/contact",
+          path: "/shop-with-sidebar",
+          hidden: false,
+        },
+        {
+          id: 4,
+          title: "Accessories",
+          newTab: false,
+          path: "/shop-with-sidebar",
+          hidden: false,
+        },
+        {
+          id: 5,
+          title: "Sale",
+          newTab: false,
+          path: "/shop-with-sidebar",
           hidden: false,
         },
         {
@@ -189,21 +209,21 @@ const rows = [
     content: {
       items: [
         {
-          salePercent: "30%",
-          title: "True Wireless Noise Cancelling Headphone",
+          salePercent: "40%",
+          title: "New Season \u2014 Women\u2019s Collection",
           description:
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-          ctaLabel: "Shop Now",
+            "Discover effortlessly chic styles crafted for the modern woman. Fresh cuts, soft fabrics, bold prints.",
+          ctaLabel: "Shop Women",
           href: "/shop-with-sidebar",
           image: "/images/hero/hero-01.png",
         },
         {
-          salePercent: "25%",
-          title: "Apple iPhone 14 Plus",
+          salePercent: "30%",
+          title: "Sharp & Effortless \u2014 Men\u2019s Style Edit",
           description:
-            "Powerful performance with all-day battery life and a brilliant display.",
-          ctaLabel: "View Product",
-          href: "/shop-details",
+            "Elevate your everyday look with our curated menswear essentials. Smart, casual, and everything in between.",
+          ctaLabel: "Shop Men",
+          href: "/shop-with-sidebar",
           image: "/images/hero/hero-02.png",
         },
       ],
@@ -215,20 +235,20 @@ const rows = [
     content: {
       cards: [
         {
-          title: "iPhone 14 Plus & 14 Pro Max",
+          title: "Kids\u2019 New Arrivals",
           caption: "limited time offer",
-          price: "$699",
-          oldPrice: "$999",
+          price: "$29",
+          oldPrice: "$49",
           image: "/images/hero/hero-02.png",
-          href: "/shop-details",
+          href: "/shop-with-sidebar",
         },
         {
-          title: "Wireless Headphone",
+          title: "Premium Accessories",
           caption: "limited time offer",
-          price: "$699",
-          oldPrice: "$999",
+          price: "$59",
+          oldPrice: "$89",
           image: "/images/hero/hero-01.png",
-          href: "/shop-details",
+          href: "/shop-with-sidebar",
         },
       ],
     },
@@ -241,22 +261,22 @@ const rows = [
         {
           img: "/images/icons/icon-01.svg",
           title: "Free Shipping",
-          description: "For all orders $200",
+          description: "On all orders over $75",
         },
         {
           img: "/images/icons/icon-02.svg",
-          title: "1 & 1 Returns",
-          description: "Cancellation after 1 day",
+          title: "Easy 30-Day Returns",
+          description: "Hassle-free exchanges & refunds",
         },
         {
           img: "/images/icons/icon-03.svg",
           title: "100% Secure Payments",
-          description: "Gurantee secure payments",
+          description: "Your data is always safe",
         },
         {
           img: "/images/icons/icon-04.svg",
-          title: "24/7 Dedicated Support",
-          description: "Anywhere & anytime",
+          title: "Style Advice",
+          description: "Expert fashion guidance 24/7",
         },
       ],
     },
@@ -265,12 +285,12 @@ const rows = [
     key: "home.promo",
     title: "Home Promo Banner",
     content: {
-      headline: "UP TO 30% OFF",
-      subhead: "Apple iPhone 14 Plus",
+      headline: "UP TO 40% OFF",
+      subhead: "Women\u2019s Summer Collection",
       description:
-        "iPhone 14 has the same superspeedy chip that is in iPhone 13 Pro.",
-      ctaLabel: "Buy Now",
-      ctaHref: "#",
+        "Shop our curated end-of-season edit. Premium fabrics, contemporary cuts, unbeatable prices.",
+      ctaLabel: "Shop the Sale",
+      ctaHref: "/shop-with-sidebar",
       image: "/images/promo/promo-01.png",
     },
   },
@@ -280,10 +300,11 @@ const rows = [
     content: {
       deadline: "2026-12-31T23:59:59Z",
       tag: "Don\u2019t Miss!!",
-      title: "Enhance Your Music Experience",
-      description: "The Havit H206d is a wired PC headphone.",
-      ctaLabel: "Check it Out!",
-      ctaHref: "#",
+      title: "End of Season Sale \u2014 Final Hours",
+      description:
+        "Grab your favourite styles before they\u2019re gone. Up to 50% off Women\u2019s, Men\u2019s, Kids & Accessories.",
+      ctaLabel: "Shop the Sale",
+      ctaHref: "/shop-with-sidebar",
       image: "/images/countdown/countdown-01.png",
     },
   },
@@ -291,9 +312,9 @@ const rows = [
     key: "common.newsletter",
     title: "Newsletter Block",
     content: {
-      title: "Don't Miss Out Latest Trends & Offers",
+      title: "Stay Ahead of the Trend",
       description:
-        "Register to receive news about the latest offers and discount codes.",
+        "Sign up for curated style picks, exclusive member offers, and early access to new collections.",
       buttonLabel: "Subscribe",
     },
   },

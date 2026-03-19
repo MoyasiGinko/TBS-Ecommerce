@@ -14,11 +14,11 @@ type PromoContent = {
 };
 
 const defaultPromo: PromoContent = {
-  headline: "UP TO 30% OFF",
-  subhead: "Apple iPhone 14 Plus",
+  headline: "UP TO 40% OFF",
+  subhead: "Women's Summer Collection",
   description:
-    "iPhone 14 has the same superspeedy chip that is in iPhone 13 Pro.",
-  ctaLabel: "Buy Now",
+    "Discover our latest summer essentials with premium fabrics and timeless styles.",
+  ctaLabel: "Shop Now",
   ctaHref: "#",
   image: "/images/promo/promo-01.png",
 };
